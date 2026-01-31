@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/user_model.dart';
 import '../services/api_service.dart';
 import '../services/local_storage_service.dart';
@@ -7,12 +11,22 @@ import '../../domain/entities/user.dart';
 /// Repository for authentication operations
 class AuthRepository {
   final ApiService _apiService;
+  final LocalStorageService _localStorageService;
+
+  static const String _tokenKey = 'auth_token';
+  static const String _userKey = 'auth_user';
 
   AuthRepository({required ApiService apiService, required LocalStorageService localStorageService})
-    : _apiService = apiService;
+    : _apiService = apiService,
+      _localStorageService = localStorageService;
 
-  /// Login with wallet address
-  Future<User?> loginWithWallet(String address, String signature) async {
+  /// Register a new user
+  Future<User?> register({
+    required String username,
+    required String email,
+    required String password,
+    String? walletAddress,
+  }) async {
     final response = await _apiService.post<Map<String, dynamic>>(
       '${ApiConfig.authEndpoint}/register',
       body: {
@@ -25,7 +39,12 @@ class AuthRepository {
     );
 
     if (response.isSuccess && response.data != null) {
-      return UserModel.fromJson(response.data!).toEntity();
+      final token = response.data!['access_token'] as String?;
+      if (token != null) {
+        await _saveToken(token);
+        _apiService.setAuthToken(token);
+      }
+      return await getCurrentUser();
     }
 
     return null;
@@ -33,7 +52,6 @@ class AuthRepository {
 
   /// Login with username and password (OAuth2 form format)
   Future<User?> login({required String username, required String password}) async {
-    // Backend uses OAuth2 form format, so we need form-urlencoded
     final response = await _apiService.postForm(
       '${ApiConfig.authEndpoint}/login',
       body: {'username': username, 'password': password},
@@ -44,8 +62,6 @@ class AuthRepository {
       if (token != null) {
         await _saveToken(token);
         _apiService.setAuthToken(token);
-
-        // Fetch user info after login
         return await getCurrentUser();
       }
     }
@@ -70,8 +86,6 @@ class AuthRepository {
       if (token != null) {
         await _saveToken(token);
         _apiService.setAuthToken(token);
-
-        // Fetch user info after login
         return await getCurrentUser();
       }
     }
@@ -164,6 +178,7 @@ class AuthRepository {
       _userKey,
       jsonEncode({'id': user.id, 'name': user.name, 'address': user.address, 'role': user.role, 'level': user.level}),
     );
+    await _localStorageService.saveCurrentUser(user.id);
   }
 
   /// Clear stored auth data

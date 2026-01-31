@@ -52,6 +52,8 @@ class _RegisterPageState extends State<RegisterPage> {
           name: _nameController.text.trim(),
           role: _selectedRole,
           password: _passwordController.text,
+          username: '',
+          email: '',
         ),
       );
     }
@@ -75,12 +77,9 @@ class _RegisterPageState extends State<RegisterPage> {
             // Pop back to login which will redirect to main page
             Navigator.pop(context);
           } else if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppTheme.errorColor,
-              ),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message), backgroundColor: AppTheme.errorColor));
           }
         },
         child: SafeArea(
@@ -99,23 +98,16 @@ class _RegisterPageState extends State<RegisterPage> {
                       const Text(
                         'Hesap Oluştur',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.headingColor,
-                        ),
+                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.headingColor),
                       ),
                       const SizedBox(height: 8),
                       const Text(
                         'Yeni bir hesap oluşturarak sisteme katılın',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppTheme.bodyTextColor,
-                        ),
+                        style: TextStyle(fontSize: 14, color: AppTheme.bodyTextColor),
                       ),
                       const SizedBox(height: 32),
-                      
+
                       // Register Card
                       Container(
                         padding: const EdgeInsets.all(24),
@@ -142,9 +134,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 labelText: 'Ad Soyad',
                                 hintText: 'örn: John Doe',
                                 prefixIcon: const Icon(Icons.person_outline),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(color: AppTheme.dividerColor),
@@ -165,16 +155,14 @@ class _RegisterPageState extends State<RegisterPage> {
                               },
                             ),
                             const SizedBox(height: 16),
-                            
+
                             // Role Dropdown
                             DropdownButtonFormField<String>(
                               value: _selectedRole,
                               decoration: InputDecoration(
                                 labelText: 'Rol',
                                 prefixIcon: const Icon(Icons.work_outline),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(color: AppTheme.dividerColor),
@@ -185,10 +173,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 ),
                               ),
                               items: _roles.map((role) {
-                                return DropdownMenuItem(
-                                  value: role,
-                                  child: Text(role),
-                                );
+                                return DropdownMenuItem(value: role, child: Text(role));
                               }).toList(),
                               onChanged: (value) {
                                 if (value != null) {
@@ -197,7 +182,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               },
                             ),
                             const SizedBox(height: 16),
-                            
+
                             // Password Field
                             TextFormField(
                               controller: _passwordController,
@@ -207,16 +192,12 @@ class _RegisterPageState extends State<RegisterPage> {
                                 hintText: 'Şifre belirleyin',
                                 prefixIcon: const Icon(Icons.lock_outline),
                                 suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                                  ),
+                                  icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
                                   onPressed: () {
                                     setState(() => _obscurePassword = !_obscurePassword);
                                   },
                                 ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(color: AppTheme.dividerColor),
@@ -237,7 +218,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               },
                             ),
                             const SizedBox(height: 16),
-                            
+
                             // Confirm Password Field
                             TextFormField(
                               controller: _confirmPasswordController,
@@ -247,16 +228,12 @@ class _RegisterPageState extends State<RegisterPage> {
                                 hintText: 'Şifreyi tekrar girin',
                                 prefixIcon: const Icon(Icons.lock_outline),
                                 suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
-                                  ),
+                                  icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
                                   onPressed: () {
                                     setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
                                   },
                                 ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(color: AppTheme.dividerColor),
@@ -277,7 +254,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               },
                             ),
                             const SizedBox(height: 24),
-                            
+
                             // Info Box
                             Container(
                               padding: const EdgeInsets.all(12),
@@ -292,48 +269,37 @@ class _RegisterPageState extends State<RegisterPage> {
                                   Expanded(
                                     child: Text(
                                       'Kayıt sonrası otomatik olarak hiyerarşiye ekleneceksiniz',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Color(0xFF0D47A1),
-                                      ),
+                                      style: TextStyle(fontSize: 12, color: Color(0xFF0D47A1)),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                             const SizedBox(height: 24),
-                            
+
                             // Register Button
                             BlocBuilder<AuthBloc, AuthState>(
                               builder: (context, state) {
                                 final isLoading = state is AuthLoading;
-                                
+
                                 return ElevatedButton(
                                   onPressed: isLoading ? null : _handleRegister,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppTheme.buttonColor,
                                     foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(vertical: 16),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                     elevation: 0,
                                   ),
                                   child: isLoading
                                       ? const SizedBox(
                                           width: 24,
                                           height: 24,
-                                          child: CircularProgressIndicator(
-                                            color: Colors.white,
-                                            strokeWidth: 2,
-                                          ),
+                                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                                         )
                                       : const Text(
                                           'Kayıt Ol',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                                         ),
                                 );
                               },
@@ -342,25 +308,17 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      
+
                       // Back to Login
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text(
-                            'Zaten hesabınız var mı? ',
-                            style: TextStyle(
-                              color: AppTheme.bodyTextColor,
-                            ),
-                          ),
+                          const Text('Zaten hesabınız var mı? ', style: TextStyle(color: AppTheme.bodyTextColor)),
                           TextButton(
                             onPressed: () => Navigator.pop(context),
                             child: const Text(
                               'Giriş Yap',
-                              style: TextStyle(
-                                color: AppTheme.buttonColor,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: TextStyle(color: AppTheme.buttonColor, fontWeight: FontWeight.w600),
                             ),
                           ),
                         ],

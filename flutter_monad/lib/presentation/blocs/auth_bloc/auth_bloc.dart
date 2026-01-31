@@ -47,6 +47,8 @@ class AuthRegisterRequested extends AuthEvent {
     required this.email,
     required this.password,
     this.walletAddress,
+    required String name,
+    required String role,
   });
 
   @override
