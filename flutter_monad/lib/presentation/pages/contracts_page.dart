@@ -42,21 +42,31 @@ class Task {
 
   Color get priorityColor {
     switch (priority) {
-      case 'critical': return const Color(0xFFEF4444);
-      case 'high': return const Color(0xFFF59E0B);
-      case 'medium': return const Color(0xFF3B82F6);
-      case 'low': return const Color(0xFF22C55E);
-      default: return const Color(0xFF666666);
+      case 'critical':
+        return const Color(0xFFEF4444);
+      case 'high':
+        return const Color(0xFFF59E0B);
+      case 'medium':
+        return const Color(0xFF3B82F6);
+      case 'low':
+        return const Color(0xFF22C55E);
+      default:
+        return const Color(0xFF666666);
     }
   }
 
   String get priorityLabel {
     switch (priority) {
-      case 'critical': return 'Critical';
-      case 'high': return 'High';
-      case 'medium': return 'Medium';
-      case 'low': return 'Low';
-      default: return 'Unknown';
+      case 'critical':
+        return 'Critical';
+      case 'high':
+        return 'High';
+      case 'medium':
+        return 'Medium';
+      case 'low':
+        return 'Low';
+      default:
+        return 'Unknown';
     }
   }
 
@@ -114,23 +124,35 @@ class HierarchyUser {
 
   String get levelName {
     switch (level) {
-      case 0: return 'CEO';
-      case 1: return 'Director';
-      case 2: return 'Manager';
-      case 3: return 'Team Lead';
-      case 4: return 'Employee';
-      default: return 'Unknown';
+      case 0:
+        return 'CEO';
+      case 1:
+        return 'Director';
+      case 2:
+        return 'Manager';
+      case 3:
+        return 'Team Lead';
+      case 4:
+        return 'Employee';
+      default:
+        return 'Unknown';
     }
   }
 
   Color get levelColor {
     switch (level) {
-      case 0: return const Color(0xFF1A1A1A);
-      case 1: return const Color(0xFF3B82F6);
-      case 2: return const Color(0xFF22C55E);
-      case 3: return const Color(0xFFF59E0B);
-      case 4: return const Color(0xFF666666);
-      default: return const Color(0xFF666666);
+      case 0:
+        return const Color(0xFF1A1A1A);
+      case 1:
+        return const Color(0xFF3B82F6);
+      case 2:
+        return const Color(0xFF22C55E);
+      case 3:
+        return const Color(0xFFF59E0B);
+      case 4:
+        return const Color(0xFF666666);
+      default:
+        return const Color(0xFF666666);
     }
   }
 }
@@ -141,11 +163,7 @@ class AssignedTask {
   final HierarchyUser assignee;
   final DateTime assignedAt;
 
-  AssignedTask({
-    required this.task,
-    required this.assignee,
-    required this.assignedAt,
-  });
+  AssignedTask({required this.task, required this.assignee, required this.assignedAt});
 }
 
 /// Contracts page - List and manage contracts
@@ -164,7 +182,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
   List<AssignedTask> _assignedTasks = [];
   bool _isLoadingUsers = true;
   bool _isLoadingTasks = true;
-  
+
   // Filter states
   String _taskFilter = 'all'; // all, critical, high, medium, low, errors
   String _assignedTaskFilter = 'all'; // all, critical, high, medium, low
@@ -178,14 +196,13 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
     _loadTasksFromBackend();
 
     // Parildayan animasyon icin controller
-    _blinkController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    )..repeat(reverse: true);
+    _blinkController = AnimationController(duration: const Duration(milliseconds: 800), vsync: this)
+      ..repeat(reverse: true);
 
-    _blinkAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
-      CurvedAnimation(parent: _blinkController, curve: Curves.easeInOut),
-    );
+    _blinkAnimation = Tween<double>(
+      begin: 0.3,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _blinkController, curve: Curves.easeInOut));
   }
 
   void _loadUsersFromBackend() {
@@ -208,15 +225,19 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
 
   void _onMembersLoaded(HierarchyMembersLoaded state) {
     setState(() {
-      _users = state.members.map((user) => HierarchyUser(
-        id: user.id,
-        name: user.name,
-        parentId: user.supervisorId,
-        walletAddress: user.address,
-        level: user.level,
-        role: user.role,
-        isActive: user.isActive,
-      )).toList();
+      _users = state.members
+          .map(
+            (user) => HierarchyUser(
+              id: user.id,
+              name: user.name,
+              parentId: user.supervisorId,
+              walletAddress: user.address,
+              level: user.level,
+              role: user.role,
+              isActive: user.isActive,
+            ),
+          )
+          .toList();
       _isLoadingUsers = false;
     });
   }
@@ -239,15 +260,19 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
 
   void _onContractsLoadedAsTasks(ContractsLoaded state) {
     setState(() {
-      _tasks = state.contracts.map((contract) => Task(
-        id: contract.id,
-        title: contract.title,
-        shortDescription: contract.description ?? '',
-        longDescription: contract.contentHash,
-        priority: _contractStatusToPriority(contract.status),
-        isError: contract.status == ContractStatusEnum.rejected,
-        createdAt: contract.createdAt.toIso8601String(),
-      )).toList();
+      _tasks = state.contracts
+          .map(
+            (contract) => Task(
+              id: contract.id,
+              title: contract.title,
+              shortDescription: contract.description ?? '',
+              longDescription: contract.contentHash,
+              priority: _contractStatusToPriority(contract.status),
+              isError: contract.status == ContractStatusEnum.rejected,
+              createdAt: contract.createdAt.toIso8601String(),
+            ),
+          )
+          .toList();
       _isLoadingTasks = false;
     });
   }
@@ -283,12 +308,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         title: const Text('Contracts'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadContracts,
-          ),
-        ],
+        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _loadContracts)],
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
@@ -305,11 +325,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppTheme.dividerColor),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 4)),
                   ],
                 ),
                 child: Column(
@@ -323,20 +339,12 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                             color: AppTheme.buttonColor,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(
-                            Icons.pending_actions,
-                            color: Colors.white,
-                            size: 20,
-                          ),
+                          child: const Icon(Icons.pending_actions, color: Colors.white, size: 20),
                         ),
                         const SizedBox(width: 12),
                         const Text(
                           'Contracts',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.headingColor,
-                          ),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.headingColor),
                         ),
                         const Spacer(),
                         _buildTaskFilterDropdown(),
@@ -345,14 +353,11 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                     const SizedBox(height: 16),
                     const Divider(height: 1, color: AppTheme.dividerColor),
                     const SizedBox(height: 16),
-                    Expanded(
-                      child: _buildTasksList(),
-                    ),
+                    Expanded(child: _buildTasksList()),
                   ],
                 ),
               ),
             ),
-            
 
             // Container 2 - Orta (Users in Hierarchy)
             Expanded(
@@ -364,11 +369,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppTheme.dividerColor),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 4)),
                   ],
                 ),
                 child: Column(
@@ -382,20 +383,12 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                             color: AppTheme.accentColor,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(
-                            Icons.people,
-                            color: Colors.white,
-                            size: 20,
-                          ),
+                          child: const Icon(Icons.people, color: Colors.white, size: 20),
                         ),
                         const SizedBox(width: 12),
                         const Text(
                           'Users',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.headingColor,
-                          ),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.headingColor),
                         ),
                         const Spacer(),
                         _buildUserFilterDropdown(),
@@ -404,14 +397,12 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                     const SizedBox(height: 16),
                     const Divider(height: 1, color: AppTheme.dividerColor),
                     const SizedBox(height: 16),
-                    Expanded(
-                      child: _buildUsersList(),
-                    ),
+                    Expanded(child: _buildUsersList()),
                   ],
                 ),
               ),
             ),
-            
+
             // Container 3 - Sağ (Assigned Tasks)
             Expanded(
               child: Container(
@@ -422,11 +413,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppTheme.dividerColor),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 4)),
                   ],
                 ),
                 child: Column(
@@ -440,20 +427,12 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                             color: AppTheme.successColor,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(
-                            Icons.assignment_turned_in,
-                            color: Colors.white,
-                            size: 20,
-                          ),
+                          child: const Icon(Icons.assignment_turned_in, color: Colors.white, size: 20),
                         ),
                         const SizedBox(width: 12),
                         const Text(
-                          'Assigned Contracts',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.headingColor,
-                          ),
+                          'Contracts',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.headingColor),
                         ),
                         const Spacer(),
                         _buildAssignedTaskFilterDropdown(),
@@ -462,9 +441,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                     const SizedBox(height: 16),
                     const Divider(height: 1, color: AppTheme.dividerColor),
                     const SizedBox(height: 16),
-                    Expanded(
-                      child: _buildAssignedTasksList(),
-                    ),
+                    Expanded(child: _buildAssignedTasksList()),
                   ],
                 ),
               ),
@@ -624,27 +601,16 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                         color: AppTheme.buttonColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
-                        Icons.add_task,
-                        color: AppTheme.buttonColor,
-                        size: 24,
-                      ),
+                      child: const Icon(Icons.add_task, color: AppTheme.buttonColor, size: 24),
                     ),
                     const SizedBox(width: 16),
                     const Expanded(
                       child: Text(
                         'Create New Contract',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.headingColor,
-                        ),
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.headingColor),
                       ),
                     ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close),
-                    ),
+                    IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
                   ],
                 ),
 
@@ -653,11 +619,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                 // Contract Name
                 const Text(
                   'Contract Name *',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.headingColor,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.headingColor),
                 ),
                 const SizedBox(height: 8),
                 TextField(
@@ -687,11 +649,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                 // Short Description
                 const Text(
                   'Short Description *',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.headingColor,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.headingColor),
                 ),
                 const SizedBox(height: 8),
                 TextField(
@@ -722,11 +680,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                 // Priority Selection
                 const Text(
                   'Priority Level',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.headingColor,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.headingColor),
                 ),
                 const SizedBox(height: 8),
                 Container(
@@ -746,7 +700,11 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                           value: 'critical',
                           child: Row(
                             children: [
-                              Container(width: 12, height: 12, decoration: BoxDecoration(color: const Color(0xFFEF4444), shape: BoxShape.circle)),
+                              Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(color: const Color(0xFFEF4444), shape: BoxShape.circle),
+                              ),
                               const SizedBox(width: 10),
                               const Text('Critical'),
                             ],
@@ -756,7 +714,11 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                           value: 'high',
                           child: Row(
                             children: [
-                              Container(width: 12, height: 12, decoration: BoxDecoration(color: const Color(0xFFF59E0B), shape: BoxShape.circle)),
+                              Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(color: const Color(0xFFF59E0B), shape: BoxShape.circle),
+                              ),
                               const SizedBox(width: 10),
                               const Text('High'),
                             ],
@@ -766,7 +728,11 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                           value: 'medium',
                           child: Row(
                             children: [
-                              Container(width: 12, height: 12, decoration: BoxDecoration(color: const Color(0xFF3B82F6), shape: BoxShape.circle)),
+                              Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(color: const Color(0xFF3B82F6), shape: BoxShape.circle),
+                              ),
                               const SizedBox(width: 10),
                               const Text('Medium'),
                             ],
@@ -776,7 +742,11 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                           value: 'low',
                           child: Row(
                             children: [
-                              Container(width: 12, height: 12, decoration: BoxDecoration(color: const Color(0xFF22C55E), shape: BoxShape.circle)),
+                              Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(color: const Color(0xFF22C55E), shape: BoxShape.circle),
+                              ),
                               const SizedBox(width: 10),
                               const Text('Low'),
                             ],
@@ -803,9 +773,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                     decoration: BoxDecoration(
                       color: isError ? AppTheme.errorColor.withValues(alpha: 0.1) : AppTheme.surfaceColor,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isError ? AppTheme.errorColor : AppTheme.dividerColor,
-                      ),
+                      border: Border.all(color: isError ? AppTheme.errorColor : AppTheme.dividerColor),
                     ),
                     child: Row(
                       children: [
@@ -828,10 +796,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                               ),
                               Text(
                                 'This task will display with a blinking indicator',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppTheme.bodyTextColor,
-                                ),
+                                style: TextStyle(fontSize: 12, color: AppTheme.bodyTextColor),
                               ),
                             ],
                           ),
@@ -890,10 +855,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: const Text(
-                      'Create Task',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
+                    child: const Text('Create Task', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   ),
                 ),
               ],
@@ -917,18 +879,11 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.task_alt,
-              size: 48,
-              color: AppTheme.bodyTextColor.withValues(alpha: 0.5),
-            ),
+            Icon(Icons.task_alt, size: 48, color: AppTheme.bodyTextColor.withValues(alpha: 0.5)),
             const SizedBox(height: 12),
             Text(
               _taskFilter == 'all' ? 'No tasks' : 'No matching tasks',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppTheme.bodyTextColor.withValues(alpha: 0.7),
-              ),
+              style: TextStyle(fontSize: 14, color: AppTheme.bodyTextColor.withValues(alpha: 0.7)),
             ),
           ],
         ),
@@ -951,15 +906,9 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: task.isError 
-              ? AppTheme.errorColor.withValues(alpha: 0.05) 
-              : AppTheme.surfaceColor,
+          color: task.isError ? AppTheme.errorColor.withValues(alpha: 0.05) : AppTheme.surfaceColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: task.isError 
-                ? AppTheme.errorColor.withValues(alpha: 0.3) 
-                : AppTheme.dividerColor,
-          ),
+          border: Border.all(color: task.isError ? AppTheme.errorColor.withValues(alpha: 0.3) : AppTheme.dividerColor),
         ),
         child: Row(
           children: [
@@ -967,7 +916,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: task.isError 
+                color: task.isError
                     ? AppTheme.errorColor.withValues(alpha: 0.1)
                     : task.priorityColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
@@ -979,7 +928,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
               ),
             ),
             const SizedBox(width: 12),
-            
+
             // Başlık ve açıklama
             Expanded(
               child: Column(
@@ -1008,11 +957,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                         ),
                         child: Text(
                           task.priorityLabel,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: task.priorityColor,
-                          ),
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: task.priorityColor),
                         ),
                       ),
                     ],
@@ -1020,17 +965,14 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                   const SizedBox(height: 4),
                   Text(
                     task.shortDescription,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.bodyTextColor,
-                    ),
+                    style: TextStyle(fontSize: 12, color: AppTheme.bodyTextColor),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-            
+
             // Error ise parıldayan kırmızı daire
             if (task.isError) ...[
               const SizedBox(width: 12),
@@ -1056,11 +998,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
               ),
             ] else ...[
               const SizedBox(width: 8),
-              Icon(
-                Icons.chevron_right,
-                color: AppTheme.bodyTextColor.withValues(alpha: 0.5),
-                size: 20,
-              ),
+              Icon(Icons.chevron_right, color: AppTheme.bodyTextColor.withValues(alpha: 0.5), size: 20),
             ],
           ],
         ),
@@ -1088,7 +1026,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: task.isError 
+                      color: task.isError
                           ? AppTheme.errorColor.withValues(alpha: 0.1)
                           : task.priorityColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -1123,11 +1061,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                               ),
                               child: Text(
                                 task.priorityLabel,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: task.priorityColor,
-                                ),
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: task.priorityColor),
                               ),
                             ),
                             if (task.isError) ...[
@@ -1153,62 +1087,41 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                       ],
                     ),
                   ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close),
-                  ),
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
                 ],
               ),
-              
+
               const SizedBox(height: 20),
               const Divider(height: 1, color: AppTheme.dividerColor),
               const SizedBox(height: 20),
-              
+
               // Short Description
               const Text(
                 'Summary',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.headingColor,
-                ),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.headingColor),
               ),
               const SizedBox(height: 8),
-              Text(
-                task.shortDescription,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppTheme.bodyTextColor,
-                ),
-              ),
-              
+              Text(task.shortDescription, style: const TextStyle(fontSize: 14, color: AppTheme.bodyTextColor)),
+
               const SizedBox(height: 16),
-              
+
               // Long Description
               const Text(
                 'Details',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.headingColor,
-                ),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.headingColor),
               ),
               const SizedBox(height: 8),
               Flexible(
                 child: SingleChildScrollView(
                   child: Text(
                     task.longDescription,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppTheme.bodyTextColor,
-                      height: 1.5,
-                    ),
+                    style: const TextStyle(fontSize: 13, color: AppTheme.bodyTextColor, height: 1.5),
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Assign Button
               SizedBox(
                 width: double.infinity,
@@ -1256,55 +1169,37 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                       color: AppTheme.accentColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(
-                      Icons.person_add,
-                      color: AppTheme.accentColor,
-                      size: 20,
-                    ),
+                    child: const Icon(Icons.person_add, color: AppTheme.accentColor, size: 20),
                   ),
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
                       'Assign Task To User',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.headingColor,
-                      ),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.headingColor),
                     ),
                   ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close),
-                  ),
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
                 ],
               ),
-              
+
               const SizedBox(height: 8),
               Text(
                 'Task: ${task.title}',
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppTheme.bodyTextColor,
-                ),
+                style: const TextStyle(fontSize: 13, color: AppTheme.bodyTextColor),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              
+
               const SizedBox(height: 16),
               const Divider(height: 1, color: AppTheme.dividerColor),
               const SizedBox(height: 16),
-              
+
               const Text(
                 'Select User',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.headingColor,
-                ),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.headingColor),
               ),
               const SizedBox(height: 12),
-              
+
               // Users list
               Flexible(
                 child: ListView.separated(
@@ -1349,11 +1244,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
               child: Center(
                 child: Text(
                   user.name[0].toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: user.levelColor,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: user.levelColor),
                 ),
               ),
             ),
@@ -1364,27 +1255,16 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                 children: [
                   Text(
                     user.name,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.headingColor,
-                    ),
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.headingColor),
                   ),
                   Text(
                     '${user.role} • L${user.level}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.bodyTextColor,
-                    ),
+                    style: const TextStyle(fontSize: 12, color: AppTheme.bodyTextColor),
                   ),
                 ],
               ),
             ),
-            Icon(
-              Icons.add_circle_outline,
-              color: AppTheme.buttonColor,
-              size: 22,
-            ),
+            Icon(Icons.add_circle_outline, color: AppTheme.buttonColor, size: 22),
           ],
         ),
       ),
@@ -1393,20 +1273,16 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
 
   /// Görevi kullanıcıya ata
   void _assignTaskToUser(Task task, HierarchyUser user) {
-    final assignedTask = AssignedTask(
-      task: task,
-      assignee: user,
-      assignedAt: DateTime.now(),
-    );
-    
+    final assignedTask = AssignedTask(task: task, assignee: user, assignedAt: DateTime.now());
+
     setState(() {
       _assignedTasks.add(assignedTask);
       // Task'ı listeden kaldır
       _tasks.removeWhere((t) => t.id == task.id);
     });
-    
+
     Navigator.pop(context);
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Task assigned to ${user.name}'),
@@ -1426,27 +1302,17 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.assignment_outlined,
-              size: 48,
-              color: AppTheme.bodyTextColor.withValues(alpha: 0.5),
-            ),
+            Icon(Icons.assignment_outlined, size: 48, color: AppTheme.bodyTextColor.withValues(alpha: 0.5)),
             const SizedBox(height: 12),
             Text(
               _assignedTaskFilter == 'all' ? 'No assigned tasks' : 'No matching assigned tasks',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppTheme.bodyTextColor.withValues(alpha: 0.7),
-              ),
+              style: TextStyle(fontSize: 14, color: AppTheme.bodyTextColor.withValues(alpha: 0.7)),
             ),
             if (_assignedTaskFilter == 'all') ...[
               const SizedBox(height: 4),
               Text(
                 'Assign tasks from the Tasks panel',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.bodyTextColor.withValues(alpha: 0.5),
-                ),
+                style: TextStyle(fontSize: 12, color: AppTheme.bodyTextColor.withValues(alpha: 0.5)),
               ),
             ],
           ],
@@ -1467,7 +1333,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
   Widget _buildAssignedTaskCard(AssignedTask assignedTask) {
     final task = assignedTask.task;
     final user = assignedTask.assignee;
-    
+
     return GestureDetector(
       onTap: () => _showAssignedTaskDetailPopup(assignedTask),
       child: Container(
@@ -1475,9 +1341,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
         decoration: BoxDecoration(
           color: AppTheme.successColor.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppTheme.successColor.withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: AppTheme.successColor.withValues(alpha: 0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1490,21 +1354,13 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                     color: task.priorityColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Icon(
-                    Icons.assignment_turned_in,
-                    color: task.priorityColor,
-                    size: 16,
-                  ),
+                  child: Icon(Icons.assignment_turned_in, color: task.priorityColor, size: 16),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     task.title,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.headingColor,
-                    ),
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.headingColor),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1517,11 +1373,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                   ),
                   child: Text(
                     task.priorityLabel,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: task.priorityColor,
-                    ),
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: task.priorityColor),
                   ),
                 ),
               ],
@@ -1539,11 +1391,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                   child: Center(
                     child: Text(
                       user.name[0].toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: user.levelColor,
-                      ),
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: user.levelColor),
                     ),
                   ),
                 ),
@@ -1554,27 +1402,13 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                     children: [
                       Text(
                         'Assigned to: ${user.name}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: AppTheme.headingColor,
-                        ),
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppTheme.headingColor),
                       ),
-                      Text(
-                        user.role,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppTheme.bodyTextColor,
-                        ),
-                      ),
+                      Text(user.role, style: const TextStyle(fontSize: 11, color: AppTheme.bodyTextColor)),
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  color: AppTheme.bodyTextColor.withValues(alpha: 0.5),
-                  size: 18,
-                ),
+                Icon(Icons.chevron_right, color: AppTheme.bodyTextColor.withValues(alpha: 0.5), size: 18),
               ],
             ),
           ],
@@ -1587,7 +1421,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
   void _showAssignedTaskDetailPopup(AssignedTask assignedTask) {
     final task = assignedTask.task;
     final user = assignedTask.assignee;
-    
+
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -1609,11 +1443,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                       color: AppTheme.successColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
-                      Icons.assignment_turned_in,
-                      color: AppTheme.successColor,
-                      size: 24,
-                    ),
+                    child: const Icon(Icons.assignment_turned_in, color: AppTheme.successColor, size: 24),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -1639,11 +1469,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                               ),
                               child: Text(
                                 task.priorityLabel,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: task.priorityColor,
-                                ),
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: task.priorityColor),
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -1667,15 +1493,12 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                       ],
                     ),
                   ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close),
-                  ),
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
                 ],
               ),
-              
+
               const SizedBox(height: 20),
-              
+
               // Assignee Info
               Container(
                 padding: const EdgeInsets.all(14),
@@ -1696,11 +1519,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                       child: Center(
                         child: Text(
                           user.name[0].toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: user.levelColor,
-                          ),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: user.levelColor),
                         ),
                       ),
                     ),
@@ -1709,13 +1528,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Assigned To',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: AppTheme.bodyTextColor,
-                            ),
-                          ),
+                          const Text('Assigned To', style: TextStyle(fontSize: 11, color: AppTheme.bodyTextColor)),
                           const SizedBox(height: 2),
                           Text(
                             user.name,
@@ -1727,10 +1540,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                           ),
                           Text(
                             '${user.role} • Level ${user.level}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.bodyTextColor,
-                            ),
+                            style: const TextStyle(fontSize: 12, color: AppTheme.bodyTextColor),
                           ),
                         ],
                       ),
@@ -1738,56 +1548,38 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 20),
               const Divider(height: 1, color: AppTheme.dividerColor),
               const SizedBox(height: 20),
-              
+
               // Summary
               const Text(
                 'Summary',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.headingColor,
-                ),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.headingColor),
               ),
               const SizedBox(height: 8),
-              Text(
-                task.shortDescription,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppTheme.bodyTextColor,
-                ),
-              ),
-              
+              Text(task.shortDescription, style: const TextStyle(fontSize: 14, color: AppTheme.bodyTextColor)),
+
               const SizedBox(height: 16),
-              
+
               // Details
               const Text(
                 'Details',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.headingColor,
-                ),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.headingColor),
               ),
               const SizedBox(height: 8),
               Flexible(
                 child: SingleChildScrollView(
                   child: Text(
                     task.longDescription,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppTheme.bodyTextColor,
-                      height: 1.5,
-                    ),
+                    style: const TextStyle(fontSize: 13, color: AppTheme.bodyTextColor, height: 1.5),
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Close Button
               SizedBox(
                 width: double.infinity,
@@ -1808,7 +1600,6 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
     );
   }
 
-
   /// Kullanıcı listesini oluştur
   Widget _buildUsersList() {
     if (_isLoadingUsers) {
@@ -1822,18 +1613,11 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.people_outline,
-              size: 48,
-              color: AppTheme.bodyTextColor.withValues(alpha: 0.5),
-            ),
+            Icon(Icons.people_outline, size: 48, color: AppTheme.bodyTextColor.withValues(alpha: 0.5)),
             const SizedBox(height: 12),
             Text(
               _userFilter == 'all' ? 'No users found' : 'No ${_userFilter} users',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppTheme.bodyTextColor.withValues(alpha: 0.7),
-              ),
+              style: TextStyle(fontSize: 14, color: AppTheme.bodyTextColor.withValues(alpha: 0.7)),
             ),
           ],
         ),
@@ -1856,15 +1640,9 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: user.isActive 
-              ? AppTheme.surfaceColor 
-              : AppTheme.surfaceColor.withValues(alpha: 0.5),
+          color: user.isActive ? AppTheme.surfaceColor : AppTheme.surfaceColor.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: user.isActive 
-                ? user.levelColor.withValues(alpha: 0.3) 
-                : AppTheme.dividerColor,
-          ),
+          border: Border.all(color: user.isActive ? user.levelColor.withValues(alpha: 0.3) : AppTheme.dividerColor),
         ),
         child: Row(
           children: [
@@ -1879,16 +1657,12 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
               child: Center(
                 child: Text(
                   user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: user.levelColor,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: user.levelColor),
                 ),
               ),
             ),
             const SizedBox(width: 12),
-            
+
             // İsim, rol ve level
             Expanded(
               child: Column(
@@ -1907,13 +1681,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Text(
-                        user.role,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.bodyTextColor,
-                        ),
-                      ),
+                      Text(user.role, style: TextStyle(fontSize: 12, color: AppTheme.bodyTextColor)),
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1923,11 +1691,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                         ),
                         child: Text(
                           'L${user.level}',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: user.levelColor,
-                          ),
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: user.levelColor),
                         ),
                       ),
                     ],
@@ -1935,7 +1699,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                 ],
               ),
             ),
-            
+
             // Status indicator
             Container(
               width: 10,
@@ -1945,14 +1709,10 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                 color: user.isActive ? AppTheme.successColor : AppTheme.bodyTextColor.withValues(alpha: 0.3),
               ),
             ),
-            
+
             // Arrow icon
             const SizedBox(width: 8),
-            Icon(
-              Icons.chevron_right,
-              color: AppTheme.bodyTextColor.withValues(alpha: 0.5),
-              size: 20,
-            ),
+            Icon(Icons.chevron_right, color: AppTheme.bodyTextColor.withValues(alpha: 0.5), size: 20),
           ],
         ),
       ),
@@ -1982,28 +1742,20 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                 child: Center(
                   child: Text(
                     user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: user.levelColor,
-                    ),
+                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: user.levelColor),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Name
               Text(
                 user.name,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.headingColor,
-                ),
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.headingColor),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 4),
-              
+
               // Role badge
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -2013,33 +1765,33 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                 ),
                 child: Text(
                   user.role,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: user.levelColor,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: user.levelColor),
                 ),
               ),
-              
+
               const SizedBox(height: 24),
               const Divider(height: 1, color: AppTheme.dividerColor),
               const SizedBox(height: 24),
-              
+
               // Details
               _buildDetailItem(Icons.badge, 'ID', user.id),
               _buildDetailItem(Icons.layers, 'Level', '${user.level} (${user.levelName})'),
-              _buildDetailItem(Icons.account_balance_wallet, 'Wallet', '${user.walletAddress.substring(0, 10)}...${user.walletAddress.substring(user.walletAddress.length - 8)}'),
+              _buildDetailItem(
+                Icons.account_balance_wallet,
+                'Wallet',
+                '${user.walletAddress.substring(0, 10)}...${user.walletAddress.substring(user.walletAddress.length - 8)}',
+              ),
               _buildDetailItem(Icons.supervisor_account, 'Reports To', user.parentName ?? 'None (Top Level)'),
               _buildDetailItem(Icons.people, 'Direct Reports', '${user.childrenCount}'),
               _buildDetailItem(
-                user.isActive ? Icons.check_circle : Icons.cancel, 
-                'Status', 
+                user.isActive ? Icons.check_circle : Icons.cancel,
+                'Status',
                 user.isActive ? 'Active' : 'Inactive',
                 valueColor: user.isActive ? AppTheme.successColor : AppTheme.errorColor,
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Close button
               SizedBox(
                 width: double.infinity,
@@ -2068,23 +1820,13 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
           Icon(icon, size: 20, color: AppTheme.bodyTextColor),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppTheme.bodyTextColor,
-              ),
-            ),
+            child: Text(label, style: const TextStyle(fontSize: 14, color: AppTheme.bodyTextColor)),
           ),
           Expanded(
             flex: 2,
             child: Text(
               value,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: valueColor ?? AppTheme.headingColor,
-              ),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: valueColor ?? AppTheme.headingColor),
               textAlign: TextAlign.right,
             ),
           ),
@@ -2101,27 +1843,18 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
         }
 
         if (state is ContractsLoaded) {
-          final filteredContracts = state.contracts
-              .where((c) => c.status == filterStatus)
-              .toList();
+          final filteredContracts = state.contracts.where((c) => c.status == filterStatus).toList();
 
           if (filteredContracts.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.inbox_outlined,
-                    size: 48,
-                    color: AppTheme.bodyTextColor.withValues(alpha: 0.5),
-                  ),
+                  Icon(Icons.inbox_outlined, size: 48, color: AppTheme.bodyTextColor.withValues(alpha: 0.5)),
                   const SizedBox(height: 12),
                   Text(
                     'No contracts',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppTheme.bodyTextColor.withValues(alpha: 0.7),
-                    ),
+                    style: TextStyle(fontSize: 14, color: AppTheme.bodyTextColor.withValues(alpha: 0.7)),
                   ),
                 ],
               ),
@@ -2136,12 +1869,8 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
               return ContractCard(
                 contract: contract,
                 onTap: () => _showContractDetail(contract),
-                onApprove: contract.isPending
-                    ? () => _approveContract(contract.id)
-                    : null,
-                onReject: contract.isPending
-                    ? () => _showRejectDialog(contract.id)
-                    : null,
+                onApprove: contract.isPending ? () => _approveContract(contract.id) : null,
+                onReject: contract.isPending ? () => _showRejectDialog(contract.id) : null,
               );
             },
           );
@@ -2174,9 +1903,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) => DraggableScrollableSheet(
         initialChildSize: 0.7,
         minChildSize: 0.5,
@@ -2192,30 +1919,17 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                 child: Container(
                   width: 40,
                   height: 4,
-                  decoration: BoxDecoration(
-                    color: AppTheme.dividerColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+                  decoration: BoxDecoration(color: AppTheme.dividerColor, borderRadius: BorderRadius.circular(2)),
                 ),
               ),
               const SizedBox(height: 24),
               Text(
                 contract.title,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.headingColor,
-                ),
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.headingColor),
               ),
               const SizedBox(height: 8),
               if (contract.description != null) ...[
-                Text(
-                  contract.description!,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.bodyTextColor,
-                  ),
-                ),
+                Text(contract.description!, style: const TextStyle(fontSize: 14, color: AppTheme.bodyTextColor)),
                 const SizedBox(height: 16),
               ],
               _buildDetailRow('Status', contract.status.displayName),
@@ -2246,9 +1960,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                           Navigator.pop(context);
                           _approveContract(contract.id);
                         },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.successColor,
-                        ),
+                        style: ElevatedButton.styleFrom(backgroundColor: AppTheme.successColor),
                         child: const Text('Approve'),
                       ),
                     ),
@@ -2267,20 +1979,10 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppTheme.bodyTextColor,
-            ),
-          ),
+          Text(label, style: const TextStyle(fontSize: 14, color: AppTheme.bodyTextColor)),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: AppTheme.headingColor,
-            ),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppTheme.headingColor),
           ),
         ],
       ),
@@ -2300,23 +2002,15 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
         title: const Text('Reject Contract'),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(
-            hintText: 'Enter rejection reason',
-          ),
+          decoration: const InputDecoration(hintText: 'Enter rejection reason'),
           maxLines: 3,
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               context.read<ContractBloc>().add(
-                ContractRejectRequested(
-                  contractId: contractId,
-                  reason: controller.text,
-                ),
+                ContractRejectRequested(contractId: contractId, reason: controller.text),
               );
               Navigator.pop(context);
             },
@@ -2393,10 +2087,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
             ElevatedButton(
               onPressed: () {
                 if (titleController.text.trim().isEmpty || contentController.text.trim().isEmpty) {
