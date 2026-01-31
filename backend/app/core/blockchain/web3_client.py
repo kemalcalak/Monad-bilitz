@@ -7,7 +7,7 @@ Handles blockchain connection, transaction signing, and submission
 import asyncio
 from typing import Optional, Dict, Any
 from web3 import Web3
-from web3.middleware import geth_poa_middleware
+from web3.middleware import ExtraDataToPOAMiddleware
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
 
@@ -44,7 +44,7 @@ class MonadClient:
         self.w3 = Web3(Web3.HTTPProvider(self.rpc_url))
         
         # Add PoA middleware (Monad uses PoS but this helps with compatibility)
-        self.w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+        self.w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
         
         # Initialize account if private key provided
         self.account: Optional[LocalAccount] = None

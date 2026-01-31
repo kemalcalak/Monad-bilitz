@@ -2,6 +2,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import socketio
+
 
 from app.config import settings
 from app.api.routes import auth_routes, contract_routes, hierarchy_routes, admin_routes

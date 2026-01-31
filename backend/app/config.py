@@ -8,13 +8,13 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = "monad_user"
     POSTGRES_PASSWORD: str = "monad_password_123"
     POSTGRES_DB: str = "monad_bilitz"
-    POSTGRES_HOST: str = "db"
+    POSTGRES_SERVER: str = "db"
     POSTGRES_PORT: int = 5432
 
     @property
     def DATABASE_URL(self) -> str:
         """Construct database URL from components"""
-        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     # Redis
     REDIS_HOST: str = "redis"

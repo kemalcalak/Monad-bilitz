@@ -11,31 +11,34 @@ down: ## Stop all services
 	docker-compose down
 
 logs: ## View backend logs
-	docker-compose logs -f backend
+	docker-compose logs -f app
 
 build: ## Rebuild backend service
-	docker-compose up --build backend
+	docker-compose up --build app
 
 migrate: ## Run database migrations
-	docker-compose exec backend alembic upgrade head
+	docker-compose exec app alembic upgrade head
 
 seed: ## Seed demo data
-	docker-compose exec backend python scripts/seed_demo_data.py
+	docker-compose exec app python scripts/seed_demo_data.py
 
 test: ## Run tests
-	docker-compose exec backend pytest tests/ -v
+	docker-compose exec app pytest tests/ -v
 
 test-cov: ## Run tests with coverage
-	docker-compose exec backend pytest tests/ --cov=app --cov-report=html
+	docker-compose exec app pytest tests/ --cov=app --cov-report=html
 
 clean: ## Remove containers and volumes
 	docker-compose down -v
 
 shell: ## Open shell in backend container
-	docker-compose exec backend /bin/bash
+	docker-compose exec app /bin/bash
 
 db-shell: ## Open PostgreSQL shell
-	docker-compose exec postgres psql -U postgres -d signature_db
+	docker-compose exec db psql -U $${POSTGRES_USER:-monad_user} -d $${POSTGRES_DB:-monad_bilitz}
+
+migration: ## Create new migration (usage: make migration msg="message")
+	docker-compose exec app alembic revision --autogenerate -m "$(msg)"
 
 redis-cli: ## Open Redis CLI
 	docker-compose exec redis redis-cli
