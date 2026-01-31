@@ -3,42 +3,47 @@ import '../../domain/entities/contract.dart';
 
 part 'contract_model.g.dart';
 
+/// Contract model that matches backend ContractResponse
 @JsonSerializable()
 class ContractModel {
   final String id;
+  @JsonKey(name: 'contract_id')
+  final String contractId;
   final String title;
-  @JsonKey(name: 'content_hash')
-  final String contentHash;
+  final String content;
+  @JsonKey(name: 'contract_type')
+  final String contractType;
+  final double? amount;
+  @JsonKey(name: 'required_score')
+  final int requiredScore;
+  @JsonKey(name: 'current_score')
+  final int currentScore;
+  final String status;
   @JsonKey(name: 'creator_id')
   final String creatorId;
-  @JsonKey(name: 'required_approver_ids')
-  final List<String> requiredApproverIds;
-  @JsonKey(name: 'approved_by_ids')
-  final List<String> approvedByIds;
-  final String status;
-  @JsonKey(name: 'min_approval_level')
-  final int minApprovalLevel;
+  @JsonKey(name: 'creator_username')
+  final String? creatorUsername;
+  @JsonKey(name: 'blockchain_tx_hash')
+  final String? blockchainTxHash;
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
-  @JsonKey(name: 'updated_at')
-  final DateTime updatedAt;
-  @JsonKey(name: 'expires_at')
-  final DateTime? expiresAt;
-  final String? description;
+  final List<SignatureModel>? signatures;
   
   const ContractModel({
     required this.id,
+    required this.contractId,
     required this.title,
-    required this.contentHash,
-    required this.creatorId,
-    required this.requiredApproverIds,
-    required this.approvedByIds,
+    required this.content,
+    required this.contractType,
+    this.amount,
+    required this.requiredScore,
+    required this.currentScore,
     required this.status,
-    required this.minApprovalLevel,
+    required this.creatorId,
+    this.creatorUsername,
+    this.blockchainTxHash,
     required this.createdAt,
-    required this.updatedAt,
-    this.expiresAt,
-    this.description,
+    this.signatures,
   });
   
   factory ContractModel.fromJson(Map<String, dynamic> json) => 
@@ -51,53 +56,61 @@ class ContractModel {
     return Contract(
       id: id,
       title: title,
-      contentHash: contentHash,
+      contentHash: content, // Using content as contentHash for now
       creatorId: creatorId,
-      requiredApproverIds: requiredApproverIds,
-      approvedByIds: approvedByIds,
+      requiredApproverIds: [], // Not directly available from backend
+      approvedByIds: signatures?.map((s) => s.signerId).toList() ?? [],
       status: _parseStatus(status),
-      minApprovalLevel: minApprovalLevel,
+      minApprovalLevel: requiredScore,
       createdAt: createdAt,
-      updatedAt: updatedAt,
-      expiresAt: expiresAt,
-      description: description,
-    );
-  }
-  
-  /// Create from domain entity
-  factory ContractModel.fromEntity(Contract entity) {
-    return ContractModel(
-      id: entity.id,
-      title: entity.title,
-      contentHash: entity.contentHash,
-      creatorId: entity.creatorId,
-      requiredApproverIds: entity.requiredApproverIds,
-      approvedByIds: entity.approvedByIds,
-      status: entity.status.name.toUpperCase(),
-      minApprovalLevel: entity.minApprovalLevel,
-      createdAt: entity.createdAt,
-      updatedAt: entity.updatedAt,
-      expiresAt: entity.expiresAt,
-      description: entity.description,
+      updatedAt: createdAt, // Backend doesn't have updated_at
+      description: '$contractType - ${amount != null ? "\$$amount" : "N/A"}',
     );
   }
   
   ContractStatusEnum _parseStatus(String status) {
-    switch (status.toUpperCase()) {
-      case 'DRAFT':
+    switch (status.toLowerCase()) {
+      case 'draft':
         return ContractStatusEnum.draft;
-      case 'PENDING_APPROVAL':
+      case 'pending':
+      case 'pending_approval':
         return ContractStatusEnum.pendingApproval;
-      case 'APPROVED':
+      case 'approved':
+      case 'completed':
         return ContractStatusEnum.approved;
-      case 'REJECTED':
+      case 'rejected':
         return ContractStatusEnum.rejected;
-      case 'EXECUTED':
+      case 'executed':
         return ContractStatusEnum.executed;
-      case 'CANCELLED':
+      case 'cancelled':
         return ContractStatusEnum.cancelled;
       default:
-        return ContractStatusEnum.draft;
+        return ContractStatusEnum.pendingApproval;
     }
   }
+}
+
+/// Signature model from backend
+@JsonSerializable()
+class SignatureModel {
+  @JsonKey(name: 'signer_username')
+  final String signerUsername;
+  @JsonKey(name: 'signer_id')
+  final String signerId;
+  @JsonKey(name: 'authority_score')
+  final int authorityScore;
+  @JsonKey(name: 'signed_at')
+  final String signedAt;
+  
+  const SignatureModel({
+    required this.signerUsername,
+    this.signerId = '',
+    required this.authorityScore,
+    required this.signedAt,
+  });
+  
+  factory SignatureModel.fromJson(Map<String, dynamic> json) => 
+      _$SignatureModelFromJson(json);
+  
+  Map<String, dynamic> toJson() => _$SignatureModelToJson(this);
 }

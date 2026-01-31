@@ -69,6 +69,31 @@ class ApiService {
       return ApiResponse.error(e.toString());
     }
   }
+
+  /// POST request with form-urlencoded body (for OAuth2 login)
+  Future<ApiResponse<Map<String, dynamic>>> postForm(
+    String endpoint, {
+    required Map<String, String> body,
+  }) async {
+    try {
+      final uri = Uri.parse('${ApiConfig.apiUrl}$endpoint');
+      
+      final response = await _client
+          .post(
+            uri,
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Accept': 'application/json',
+            },
+            body: body,
+          )
+          .timeout(ApiConfig.connectionTimeout);
+      
+      return _handleResponse(response, (data) => data as Map<String, dynamic>);
+    } catch (e) {
+      return ApiResponse.error(e.toString());
+    }
+  }
   
   /// PUT request
   Future<ApiResponse<T>> put<T>(

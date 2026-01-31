@@ -9,42 +9,123 @@ class HierarchyRepository {
   final ApiService _apiService;
   
   // Flag to use mock data when API is unavailable
-  static const bool _useMockData = true;
+  // Set to false to use real backend API
+  static const bool _useMockData = false;
   
   HierarchyRepository({required ApiService apiService}) : _apiService = apiService;
   
-  /// Get full hierarchy tree
+  /// Get full hierarchy tree (from backend graph endpoint)
   Future<HierarchyNodeModel?> getHierarchyTree() async {
     if (_useMockData) {
       return _getMockHierarchyTree();
     }
     
+    // Backend uses /graph endpoint which returns {nodes: [], edges: []}
     final response = await _apiService.get<Map<String, dynamic>>(
-      '${ApiConfig.hierarchyEndpoint}/tree',
+      '${ApiConfig.hierarchyEndpoint}/graph',
       fromJson: (data) => data as Map<String, dynamic>,
     );
     
     if (response.isSuccess && response.data != null) {
-      return HierarchyNodeModel.fromJson(response.data!);
+      // Convert graph data to HierarchyNodeModel tree
+      return _convertGraphToTree(response.data!);
     }
     
     // Fall back to mock data if API fails
     return _getMockHierarchyTree();
   }
   
-  /// Get hierarchy statistics
+  /// Convert backend graph format to tree structure
+  HierarchyNodeModel? _convertGraphToTree(Map<String, dynamic> graphData) {
+    final nodes = graphData['nodes'] as List<dynamic>? ?? [];
+    final edges = graphData['edges'] as List<dynamic>? ?? [];
+    
+    if (nodes.isEmpty) return null;
+    
+    // Build node map
+    final nodeMap = <String, Map<String, dynamic>>{};
+    for (final node in nodes) {
+      final nodeData = node as Map<String, dynamic>;
+      nodeMap[nodeData['id'] as String] = nodeData;
+    }
+    
+    // Build children map from edges
+    final childrenMap = <String, List<String>>{};
+    for (final edge in edges) {
+      final edgeData = edge as Map<String, dynamic>;
+      final source = edgeData['source'] as String? ?? edgeData['from'] as String?;
+      final target = edgeData['target'] as String? ?? edgeData['to'] as String?;
+      if (source != null && target != null) {
+        childrenMap.putIfAbsent(source, () => []).add(target);
+      }
+    }
+    
+    // Find root node (node with no parent or level 0)
+    String? rootId;
+    for (final node in nodes) {
+      final nodeData = node as Map<String, dynamic>;
+      if (nodeData['level'] == 0 || nodeData['level'] == '0') {
+        rootId = nodeData['id'] as String;
+        break;
+      }
+    }
+    
+    if (rootId == null && nodes.isNotEmpty) {
+      rootId = (nodes.first as Map<String, dynamic>)['id'] as String;
+    }
+    
+    if (rootId == null) return null;
+    
+    // Build tree recursively
+    return _buildNodeFromGraph(rootId, nodeMap, childrenMap);
+  }
+  
+  HierarchyNodeModel _buildNodeFromGraph(
+    String nodeId,
+    Map<String, Map<String, dynamic>> nodeMap,
+    Map<String, List<String>> childrenMap,
+  ) {
+    final data = nodeMap[nodeId]!;
+    final childIds = childrenMap[nodeId] ?? [];
+    
+    return HierarchyNodeModel(
+      id: nodeId,
+      name: data['group_name'] as String? ?? data['display_name'] as String? ?? 'Unknown',
+      address: data['wallet_address'] as String? ?? '',
+      level: (data['level'] as num?)?.toInt() ?? 0,
+      role: data['display_name'] as String? ?? data['group_name'] as String? ?? '',
+      supervisorId: null, // Will be set via edges
+      isActive: true,
+      children: childIds.map((id) => _buildNodeFromGraph(id, nodeMap, childrenMap)).toList(),
+    );
+  }
+  
+  /// Get hierarchy statistics (from backend groups endpoint)
   Future<HierarchyStatsModel?> getHierarchyStats() async {
     if (_useMockData) {
       return _getMockHierarchyStats();
     }
     
-    final response = await _apiService.get<Map<String, dynamic>>(
-      '${ApiConfig.hierarchyEndpoint}/stats',
-      fromJson: (data) => data as Map<String, dynamic>,
+    // Get groups to calculate stats
+    final response = await _apiService.get<List<dynamic>>(
+      '${ApiConfig.hierarchyEndpoint}/groups',
+      fromJson: (data) => data as List<dynamic>,
     );
     
     if (response.isSuccess && response.data != null) {
-      return HierarchyStatsModel.fromJson(response.data!);
+      // Calculate stats from groups
+      int totalMembers = 0;
+      for (final group in response.data!) {
+        final groupData = group as Map<String, dynamic>;
+        totalMembers += (groupData['user_count'] as num?)?.toInt() ?? 0;
+      }
+      
+      return HierarchyStatsModel(
+        totalMembers: totalMembers,
+        activeMembers: totalMembers, // All members are active for now
+        pendingContracts: 0, // Will get from contracts endpoint
+        pendingSignatures: 0, // Will get from contracts endpoint
+      );
     }
     
     return _getMockHierarchyStats();
