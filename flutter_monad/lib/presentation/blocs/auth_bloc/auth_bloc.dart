@@ -16,16 +16,31 @@ class AuthCheckRequested extends AuthEvent {
 }
 
 class AuthLoginRequested extends AuthEvent {
-  final String address;
-  final String signature;
+  final String id;
+  final String password;
   
   const AuthLoginRequested({
-    required this.address,
-    required this.signature,
+    required this.id,
+    required this.password,
   });
   
   @override
-  List<Object?> get props => [address, signature];
+  List<Object?> get props => [id, password];
+}
+
+class AuthRegisterRequested extends AuthEvent {
+  final String name;
+  final String role;
+  final String password;
+  
+  const AuthRegisterRequested({
+    required this.name,
+    required this.role,
+    required this.password,
+  });
+  
+  @override
+  List<Object?> get props => [name, role, password];
 }
 
 class AuthLogoutRequested extends AuthEvent {
@@ -79,6 +94,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         super(const AuthInitial()) {
     on<AuthCheckRequested>(_onAuthCheckRequested);
     on<AuthLoginRequested>(_onAuthLoginRequested);
+    on<AuthRegisterRequested>(_onAuthRegisterRequested);
     on<AuthLogoutRequested>(_onAuthLogoutRequested);
   }
   
@@ -108,15 +124,38 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(const AuthLoading());
     
     try {
-      final user = await _authRepository.loginWithWallet(
-        event.address,
-        event.signature,
+      final user = await _authRepository.loginWithId(
+        event.id,
+        event.password,
       );
       
       if (user != null) {
         emit(AuthAuthenticated(user: user));
       } else {
-        emit(const AuthError(message: 'Login failed'));
+        emit(const AuthError(message: 'Geçersiz kullanıcı ID veya şifre'));
+      }
+    } catch (e) {
+      emit(AuthError(message: e.toString()));
+    }
+  }
+  
+  Future<void> _onAuthRegisterRequested(
+    AuthRegisterRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(const AuthLoading());
+    
+    try {
+      final user = await _authRepository.register(
+        name: event.name,
+        role: event.role,
+        password: event.password,
+      );
+      
+      if (user != null) {
+        emit(AuthAuthenticated(user: user));
+      } else {
+        emit(const AuthError(message: 'Kayıt işlemi başarısız oldu'));
       }
     } catch (e) {
       emit(AuthError(message: e.toString()));

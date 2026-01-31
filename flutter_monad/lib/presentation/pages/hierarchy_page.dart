@@ -61,9 +61,11 @@ class BlockchainNode {
 
   // Node tipini level'a göre belirle (graph görselleştirmesi için)
   String get nodeType {
-    if (level == 0) return 'root';
-    if (level <= 2) return 'validator';
-    return 'node';
+    if (level == 0) return 'ceo';
+    if (level == 1) return 'director';
+    if (level == 2) return 'manager';
+    if (level == 3) return 'team_lead';
+    return 'employee';
   }
 }
 
@@ -276,11 +278,15 @@ class _HierarchyPageState extends State<HierarchyPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildLegendItem('CEO/Root', const Color(0xFF1A1A1A)),
-                const SizedBox(width: 24),
-                _buildLegendItem('Director/Manager', const Color(0xFF444444)),
-                const SizedBox(width: 24),
-                _buildLegendItem('Employee', const Color(0xFF888888)),
+                _buildLegendItem('CEO', const Color(0xFF4F46E5)),
+                const SizedBox(width: 12),
+                _buildLegendItem('Director', const Color(0xFF7C3AED)),
+                const SizedBox(width: 12),
+                _buildLegendItem('Manager', const Color(0xFF10B981)),
+                const SizedBox(width: 12),
+                _buildLegendItem('Lead', const Color(0xFFF59E0B)),
+                const SizedBox(width: 12),
+                _buildLegendItem('Employee', const Color(0xFF64748B)),
               ],
             ),
           ),
@@ -368,12 +374,16 @@ class _HierarchyPageState extends State<HierarchyPage> {
 
   Color _getNodeColor(String type) {
     switch (type) {
-      case 'root':
-        return const Color(0xFF1A1A1A);
-      case 'validator':
-        return const Color(0xFF444444);
+      case 'ceo':
+        return const Color(0xFF4F46E5); // Indigo 600
+      case 'director':
+        return const Color(0xFF7C3AED); // Violet 600
+      case 'manager':
+        return const Color(0xFF10B981); // Emerald 500
+      case 'team_lead':
+        return const Color(0xFFF59E0B); // Amber 500
       default:
-        return const Color(0xFF888888);
+        return const Color(0xFF64748B); // Slate 500
     }
   }
 
@@ -587,23 +597,31 @@ class BlockchainTreePainter extends CustomPainter {
 
   double _getNodeRadius(String type) {
     switch (type) {
-      case 'root':
-        return 20;
-      case 'validator':
+      case 'ceo':
+        return 22;
+      case 'director':
+        return 18;
+      case 'manager':
+        return 16;
+      case 'team_lead':
         return 14;
       default:
-        return 10;
+        return 12;
     }
   }
 
   Color _getNodeColor(String type) {
     switch (type) {
-      case 'root':
-        return const Color(0xFF1A1A1A);
-      case 'validator':
-        return const Color(0xFF444444);
+      case 'ceo':
+        return const Color(0xFF4F46E5); // Indigo 600
+      case 'director':
+        return const Color(0xFF7C3AED); // Violet 600
+      case 'manager':
+        return const Color(0xFF10B981); // Emerald 500
+      case 'team_lead':
+        return const Color(0xFFF59E0B); // Amber 500
       default:
-        return const Color(0xFF888888);
+        return const Color(0xFF64748B); // Slate 500
     }
   }
 

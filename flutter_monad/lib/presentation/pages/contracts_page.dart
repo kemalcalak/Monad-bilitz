@@ -406,7 +406,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                         ),
                         const SizedBox(width: 12),
                         const Text(
-                          'Assigned Tasks',
+                          'Contracts',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
