@@ -1,0 +1,85 @@
+{
+    "tasks": [
+        {
+            "id": "task_001",
+            "title": "Smart Contract Deployment",
+            "short_description": "Deploy the new signature registry contract to mainnet",
+            "long_description": "Deploy the SignatureRegistry.sol smart contract to Ethereum mainnet. This includes verifying the contract code on Etherscan, setting up initial parameters, and ensuring all security audits have passed. The deployment should be done during low gas fee periods.",
+            "priority": "medium",
+            "is_error": false,
+            "created_at": "2026-01-30T10:00:00Z"
+        },
+        {
+            "id": "task_002",
+            "title": "Critical: Gas Limit Error",
+            "short_description": "Transaction failing due to insufficient gas estimation",
+            "long_description": "Multiple transactions are failing with 'out of gas' errors. The gas estimation algorithm needs to be reviewed and adjusted. This is affecting production transactions and requires immediate attention. Check the web3 provider settings and adjust the gas multiplier.",
+            "priority": "critical",
+            "is_error": true,
+            "created_at": "2026-01-31T08:30:00Z"
+        },
+        {
+            "id": "task_003",
+            "title": "Update Node Configuration",
+            "short_description": "Sync node settings with latest protocol changes",
+            "long_description": "The blockchain protocol has been updated with new consensus parameters. All validator nodes need to be reconfigured to match the new settings. This includes updating the peer list, adjusting block time parameters, and verifying sync status across all nodes.",
+            "priority": "high",
+            "is_error": false,
+            "created_at": "2026-01-29T14:15:00Z"
+        },
+        {
+            "id": "task_004",
+            "title": "Security: Unauthorized Access Attempt",
+            "short_description": "Multiple failed authentication attempts detected",
+            "long_description": "Security monitoring has detected 47 failed authentication attempts from IP range 192.168.x.x over the past 24 hours. This could indicate a brute force attack or credential stuffing attempt. Immediate investigation required. Consider implementing rate limiting and IP blocking.",
+            "priority": "critical",
+            "is_error": true,
+            "created_at": "2026-01-31T06:45:00Z"
+        },
+        {
+            "id": "task_005",
+            "title": "Review Pending Signatures",
+            "short_description": "5 signatures awaiting approval from level 2 managers",
+            "long_description": "There are 5 pending signature requests that have been waiting for more than 48 hours. These include 2 contract approvals, 2 budget allocations, and 1 vendor agreement. Follow up with the respective managers to expedite the approval process.",
+            "priority": "medium",
+            "is_error": false,
+            "created_at": "2026-01-28T09:00:00Z"
+        },
+        {
+            "id": "task_006",
+            "title": "Database Backup Verification",
+            "short_description": "Verify integrity of weekly database backups",
+            "long_description": "Perform a comprehensive verification of the weekly database backups. This includes testing restore procedures, checking data integrity, and ensuring all tables and schemas are properly backed up. Document any discrepancies found during the verification process.",
+            "priority": "low",
+            "is_error": false,
+            "created_at": "2026-01-27T11:30:00Z"
+        },
+        {
+            "id": "task_007",
+            "title": "API Rate Limit Exceeded",
+            "short_description": "External API calls hitting rate limits frequently",
+            "long_description": "The application is frequently hitting rate limits on the external blockchain data provider API. This is causing intermittent failures in data synchronization. Need to implement caching layer and optimize API call frequency. Consider upgrading to a higher API tier.",
+            "priority": "high",
+            "is_error": true,
+            "created_at": "2026-01-31T09:20:00Z"
+        }
+    ],
+    "priority_levels": {
+        "critical": {
+            "color": "#EF4444",
+            "weight": 4
+        },
+        "high": {
+            "color": "#F59E0B",
+            "weight": 3
+        },
+        "medium": {
+            "color": "#3B82F6",
+            "weight": 2
+        },
+        "low": {
+            "color": "#22C55E",
+            "weight": 1
+        }
+    }
+}

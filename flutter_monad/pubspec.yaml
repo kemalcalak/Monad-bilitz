@@ -49,3 +49,5 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+    - assets/sample_hierarchy_data.json
+    - assets/sample_tasks_data.json
