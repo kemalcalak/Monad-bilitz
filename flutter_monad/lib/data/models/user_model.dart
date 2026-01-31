@@ -3,32 +3,45 @@ import '../../domain/entities/user.dart';
 
 part 'user_model.g.dart';
 
+/// User model that matches backend UserResponse
 @JsonSerializable()
 class UserModel {
   final String id;
-  final String address;
-  final String name;
-  final int level;
-  final String role;
+  final String username;
+  final String? email;
+  @JsonKey(name: 'wallet_address')
+  final String? walletAddress;
+  @JsonKey(name: 'group_name')
+  final String? groupName;
+  @JsonKey(name: 'created_at')
+  final DateTime? createdAt;
+  
+  // Legacy fields for backward compatibility
+  final String? address;
+  final String? name;
+  final int? level;
+  final String? role;
   @JsonKey(name: 'supervisor_id')
   final String? supervisorId;
   @JsonKey(name: 'hkas_key_hash')
   final String? hkasKeyHash;
   @JsonKey(name: 'is_active')
   final bool isActive;
-  @JsonKey(name: 'created_at')
-  final DateTime createdAt;
   
   const UserModel({
     required this.id,
-    required this.address,
-    required this.name,
-    required this.level,
-    required this.role,
+    required this.username,
+    this.email,
+    this.walletAddress,
+    this.groupName,
+    this.createdAt,
+    this.address,
+    this.name,
+    this.level,
+    this.role,
     this.supervisorId,
     this.hkasKeyHash,
     this.isActive = true,
-    required this.createdAt,
   });
   
   factory UserModel.fromJson(Map<String, dynamic> json) => 
@@ -40,21 +53,40 @@ class UserModel {
   User toEntity() {
     return User(
       id: id,
-      address: address,
-      name: name,
-      level: level,
-      role: role,
+      address: walletAddress ?? address ?? '',
+      name: name ?? username,
+      level: level ?? _levelFromGroupName(groupName),
+      role: role ?? groupName ?? 'User',
       supervisorId: supervisorId,
       hkasKeyHash: hkasKeyHash,
       isActive: isActive,
-      createdAt: createdAt,
+      createdAt: createdAt ?? DateTime.now(),
     );
+  }
+  
+  /// Infer level from group name if not provided
+  int _levelFromGroupName(String? groupName) {
+    if (groupName == null) return 4;
+    switch (groupName.toLowerCase()) {
+      case 'ceo':
+      case 'executive':
+        return 0;
+      case 'director':
+        return 1;
+      case 'manager':
+        return 2;
+      case 'team_lead':
+        return 3;
+      default:
+        return 4;
+    }
   }
   
   /// Create from domain entity
   factory UserModel.fromEntity(User entity) {
     return UserModel(
       id: entity.id,
+      username: entity.name,
       address: entity.address,
       name: entity.name,
       level: entity.level,

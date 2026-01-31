@@ -16,7 +16,8 @@ class ContractRepository {
     int? limit,
   }) async {
     final queryParams = <String, String>{};
-    if (status != null) queryParams['status'] = status;
+    // Backend uses 'status_filter' as query parameter name
+    if (status != null) queryParams['status_filter'] = status.toLowerCase();
     if (page != null) queryParams['page'] = page.toString();
     if (limit != null) queryParams['limit'] = limit.toString();
     
@@ -87,10 +88,11 @@ class ContractRepository {
     return response.isSuccess;
   }
   
-  /// Approve a contract
+  /// Sign/Approve a contract
   Future<bool> approveContract(String contractId) async {
+    // Backend uses /sign endpoint for contract approval
     final response = await _apiService.post(
-      '${ApiConfig.contractsEndpoint}/$contractId/approve',
+      '${ApiConfig.contractsEndpoint}/$contractId/sign',
     );
     
     return response.isSuccess;
