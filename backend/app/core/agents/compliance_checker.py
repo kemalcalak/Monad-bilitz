@@ -99,7 +99,6 @@ Output format:
 - recommendations: How to fix violations
 """,
             markdown=False,
-            show_tool_calls=False,
         )
     
     async def check_compliance(

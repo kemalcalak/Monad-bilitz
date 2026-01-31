@@ -96,7 +96,6 @@ Output format:
 - estimated_approval_time: Realistic estimate
 """,
             markdown=False,
-            show_tool_calls=False,
         )
     
     async def analyze_and_route(
