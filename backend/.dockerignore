@@ -1,22 +1,46 @@
 # Python
+# Git
+.git
+.gitignore
+
+# Python
 __pycache__
-*.py[cod]
-*$py.class
-*.so
+*.pyc
+*.pyo
+*.pyd
 .Python
-.venv
-venv/
-ENV/
 env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Docker
+docker-compose.override.yml
 
 # IDEs
+.idea/
 .vscode/
+
+# Project specific
+app_data/
+postgres_data/
+alembic/versions/
+coverage/
+htmlcov/
+.pytest_cache/
+.coverage
+# uv.lock (removed to allow docker builds)
 .idea/
 *.swp
 *.swo
 
 # Testing
-.pytest_cache/
 .coverage
 htmlcov/
 

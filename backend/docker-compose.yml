@@ -1,62 +1,86 @@
-version: '3.8'
-
 services:
   db:
-    image: postgres:15-alpine
-    container_name: monad_bilitz_db
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-monad_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-monad_password_123}
-      POSTGRES_DB: ${POSTGRES_DB:-monad_bilitz}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    image: postgres:17-alpine
+    restart: always
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-monad_user}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
-      timeout: 5s
       retries: 5
-    networks:
-      - monad_network
+      start_period: 30s
+      timeout: 10s
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/pgdata
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_DB=${POSTGRES_DB?Variable not set}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
 
   redis:
     image: redis:7-alpine
-    container_name: monad_bilitz_redis
+    restart: unless-stopped
     ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - monad_network
+      - "${REDIS_PORT:-6379}:6379"
 
-  backend:
+  app:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: monad_bilitz_backend
-    env_file:
-      - .env
+    restart: always
+    ports:
+      - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
+        restart: true
       redis:
-        condition: service_healthy
-    ports:
-      - "8000:8000"
+        condition: service_started
     volumes:
-      - .:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    networks:
-      - monad_network
-    restart: unless-stopped
+      - ./app:/app/app
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+    env_file:
+      - .env
+    environment:
+      # Database Configuration
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - POSTGRES_DB=${POSTGRES_DB?Variable not set}
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      
+      # Redis Configuration
+      - REDIS_HOST=redis
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_DB=${REDIS_DB:-0}
+      
+      # JWT Authentication
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY?Variable not set}
+      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
+      - JWT_EXPIRATION_DAYS=${JWT_EXPIRATION_DAYS:-7}
+      
+      # Monad Testnet Configuration
+      - MONAD_RPC_URL=${MONAD_RPC_URL?Variable not set}
+      - MONAD_WSS_URL=${MONAD_WSS_URL?Variable not set}
+      - MONAD_CHAIN_ID=${MONAD_CHAIN_ID?Variable not set}
+      - ADMIN_WALLET_PRIVATE_KEY=${ADMIN_WALLET_PRIVATE_KEY?Variable not set}
+      
+      # Smart Contract Addresses
+      - HIERARCHY_MANAGER_ADDRESS=${HIERARCHY_MANAGER_ADDRESS:-}
+      - SIGNATURE_AUTHORITY_ADDRESS=${SIGNATURE_AUTHORITY_ADDRESS:-}
+      
+      # OpenAI API
+      - OPENAI_API_KEY=${OPENAI_API_KEY?Variable not set}
+      
+      # Socket.IO Configuration
+      - SOCKETIO_CORS_ORIGINS=${SOCKETIO_CORS_ORIGINS:-["http://localhost:3000","http://localhost:8000"]}
+      
+      # HKAS Cryptography Settings
+      - HKAS_ENCRYPTION_KEY=${HKAS_ENCRYPTION_KEY?Variable not set}
+      - PRIME_FIELD_BITS=${PRIME_FIELD_BITS:-256}
+      - DEFAULT_SECURITY_LEVEL=${DEFAULT_SECURITY_LEVEL:-128}
+      - DEFAULT_BETA=${DEFAULT_BETA:-2}
 
 volumes:
   postgres_data:
-
-networks:
-  monad_network:
-    driver: bridge

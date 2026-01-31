@@ -1,28 +1,38 @@
-FROM python:3.11-slim
+FROM python:3.12-slim-bookworm
 
-# Set working directory
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    PATH="/app/.venv/bin:$PATH"
+
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
+# UV'yi kur
+COPY --from=ghcr.io/astral-sh/uv:0.5.11 /uv /uvx /bin/
+
+# Sistem bağımlılıkları
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv for faster package installation
-RUN pip install --no-cache-dir uv
+# Python bağımlılıklarını kur (önce sadece bağımlılık dosyaları)
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-project
 
-# Copy dependency files
-COPY pyproject.toml uv.lock* ./
+# Proje dosyalarını kopyala
+COPY ./pyproject.toml ./uv.lock /app/
+COPY ./app /app/app
+COPY ./alembic /app/alembic
+COPY ./alembic.ini /app/alembic.ini
 
-# Install Python dependencies
-RUN uv pip install --system --no-cache -r pyproject.toml
+# Projeyi sync et
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen
 
-# Copy application code
-COPY . .
-
-# Expose port
 EXPOSE 8000
 
-# Run the application
-CMD ["uvicorn", "app.main:socket_app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
