@@ -125,6 +125,7 @@ class HierarchyRepository {
         activeMembers: totalMembers, // All members are active for now
         pendingContracts: 0, // Will get from contracts endpoint
         pendingSignatures: 0, // Will get from contracts endpoint
+        levelDistribution: const {},
       );
     }
     
