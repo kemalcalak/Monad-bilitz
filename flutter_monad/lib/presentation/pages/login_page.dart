@@ -13,17 +13,17 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  
+
   // Login form controllers
   final _loginUsernameController = TextEditingController();
   final _loginPasswordController = TextEditingController();
-  
+
   // Register form controllers
   final _registerUsernameController = TextEditingController();
   final _registerEmailController = TextEditingController();
   final _registerPasswordController = TextEditingController();
   final _registerConfirmPasswordController = TextEditingController();
-  
+
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 
@@ -48,21 +48,15 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
   void _handleLogin() {
     final username = _loginUsernameController.text.trim();
     final password = _loginPasswordController.text;
-    
+
     if (username.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill in all fields'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please fill in all fields'), backgroundColor: Colors.red));
       return;
     }
-    
-    context.read<AuthBloc>().add(AuthLoginWithCredentialsRequested(
-      username: username,
-      password: password,
-    ));
+
+    context.read<AuthBloc>().add(AuthLoginWithCredentialsRequested(username: username, password: password));
   }
 
   void _handleRegister() {
@@ -70,52 +64,38 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     final email = _registerEmailController.text.trim();
     final password = _registerPasswordController.text;
     final confirmPassword = _registerConfirmPasswordController.text;
-    
+
     if (username.isEmpty || email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill in all fields'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please fill in all fields'), backgroundColor: Colors.red));
       return;
     }
-    
+
     if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Passwords do not match'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Passwords do not match'), backgroundColor: Colors.red));
       return;
     }
-    
+
     if (password.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password must be at least 6 characters'),
-          backgroundColor: Colors.red,
-        ),
+        const SnackBar(content: Text('Password must be at least 6 characters'), backgroundColor: Colors.red),
       );
       return;
     }
-    
-    context.read<AuthBloc>().add(AuthRegisterRequested(
-      username: username,
-      email: email,
-      password: password,
-    ));
+
+    context.read<AuthBloc>().add(
+      AuthRegisterRequested(username: username, email: email, password: password, name: '', role: ''),
+    );
   }
 
   void _handleWalletConnect() {
     // TODO: Implement MetaMask wallet connection
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Wallet connection coming soon...'),
-        backgroundColor: Colors.orange,
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Wallet connection coming soon...'), backgroundColor: Colors.orange));
   }
 
   @override
@@ -125,12 +105,9 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.red,
-              ),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message), backgroundColor: Colors.red));
           }
         },
         child: Center(
@@ -144,12 +121,12 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                   // Logo and Title
                   _buildHeader(),
                   const SizedBox(height: 40),
-                  
+
                   // Auth Card
                   _buildAuthCard(),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Wallet Connect Button
                   _buildWalletConnectButton(),
                 ],
@@ -170,28 +147,17 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
             color: AppTheme.buttonColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: const Icon(
-            Icons.verified_user,
-            size: 64,
-            color: AppTheme.buttonColor,
-          ),
+          child: const Icon(Icons.verified_user, size: 64, color: AppTheme.buttonColor),
         ),
         const SizedBox(height: 24),
         const Text(
           'Signature Move Authority',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.headingColor,
-          ),
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.headingColor),
         ),
         const SizedBox(height: 8),
         const Text(
           'Hierarchical Contract Signing System',
-          style: TextStyle(
-            fontSize: 14,
-            color: AppTheme.bodyTextColor,
-          ),
+          style: TextStyle(fontSize: 14, color: AppTheme.bodyTextColor),
         ),
       ],
     );
@@ -203,22 +169,14 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppTheme.dividerColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, 4))],
       ),
       child: Column(
         children: [
           // Tab Bar
           Container(
             decoration: const BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: AppTheme.dividerColor),
-              ),
+              border: Border(bottom: BorderSide(color: AppTheme.dividerColor)),
             ),
             child: TabBar(
               controller: _tabController,
@@ -232,17 +190,11 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
               ],
             ),
           ),
-          
+
           // Tab Content
           SizedBox(
             height: 320,
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildLoginForm(),
-                _buildRegisterForm(),
-              ],
-            ),
+            child: TabBarView(controller: _tabController, children: [_buildLoginForm(), _buildRegisterForm()]),
           ),
         ],
       ),
@@ -253,7 +205,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         final isLoading = state is AuthLoading;
-        
+
         return Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -283,7 +235,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Password Field
               TextField(
                 controller: _loginPasswordController,
@@ -314,7 +266,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                 onSubmitted: (_) => _handleLogin(),
               ),
               const SizedBox(height: 24),
-              
+
               // Login Button
               SizedBox(
                 height: 50,
@@ -323,9 +275,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.buttonColor,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   child: isLoading
                       ? const SizedBox(
@@ -336,10 +286,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : const Text(
-                          'Login',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                        ),
+                      : const Text('Login', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                 ),
               ),
             ],
@@ -353,7 +300,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         final isLoading = state is AuthLoading;
-        
+
         return Padding(
           padding: const EdgeInsets.all(24),
           child: SingleChildScrollView(
@@ -384,7 +331,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                   ),
                 ),
                 const SizedBox(height: 12),
-                
+
                 // Email Field
                 TextField(
                   controller: _registerEmailController,
@@ -410,7 +357,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                   ),
                 ),
                 const SizedBox(height: 12),
-                
+
                 // Password Field
                 TextField(
                   controller: _registerPasswordController,
@@ -440,7 +387,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                   ),
                 ),
                 const SizedBox(height: 12),
-                
+
                 // Confirm Password Field
                 TextField(
                   controller: _registerConfirmPasswordController,
@@ -471,7 +418,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                   onSubmitted: (_) => _handleRegister(),
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Register Button
                 SizedBox(
                   height: 50,
@@ -480,9 +427,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.buttonColor,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                     child: isLoading
                         ? const SizedBox(
@@ -493,10 +438,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
-                        : const Text(
-                            'Create Account',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                          ),
+                        : const Text('Create Account', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   ),
                 ),
               ],
@@ -517,10 +459,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
                 'OR',
-                style: TextStyle(
-                  color: AppTheme.bodyTextColor.withValues(alpha: 0.7),
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(color: AppTheme.bodyTextColor.withValues(alpha: 0.7), fontWeight: FontWeight.w500),
               ),
             ),
             Expanded(child: Divider(color: AppTheme.dividerColor)),
@@ -533,16 +472,11 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
           child: OutlinedButton.icon(
             onPressed: _handleWalletConnect,
             icon: const Icon(Icons.account_balance_wallet, size: 24),
-            label: const Text(
-              'Connect with MetaMask',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
+            label: const Text('Connect with MetaMask', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFFF6851B),
               side: const BorderSide(color: Color(0xFFF6851B), width: 2),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
           ),
         ),
