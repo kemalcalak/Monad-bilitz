@@ -1,25 +1,18 @@
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../services/api_service.dart';
+import '../services/local_storage_service.dart';
 import '../../core/config/api_config.dart';
 import '../../domain/entities/user.dart';
 
 /// Repository for authentication operations
 class AuthRepository {
   final ApiService _apiService;
-  static const String _tokenKey = 'auth_token';
-  static const String _userKey = 'current_user';
 
-  AuthRepository({required ApiService apiService}) : _apiService = apiService;
+  AuthRepository({required ApiService apiService, required LocalStorageService localStorageService})
+    : _apiService = apiService;
 
-  /// Register new user
-  Future<User?> register({
-    required String username,
-    required String email,
-    required String password,
-    String? walletAddress,
-  }) async {
+  /// Login with wallet address
+  Future<User?> loginWithWallet(String address, String signature) async {
     final response = await _apiService.post<Map<String, dynamic>>(
       '${ApiConfig.authEndpoint}/register',
       body: {
@@ -39,17 +32,11 @@ class AuthRepository {
   }
 
   /// Login with username and password (OAuth2 form format)
-  Future<User?> login({
-    required String username,
-    required String password,
-  }) async {
+  Future<User?> login({required String username, required String password}) async {
     // Backend uses OAuth2 form format, so we need form-urlencoded
     final response = await _apiService.postForm(
       '${ApiConfig.authEndpoint}/login',
-      body: {
-        'username': username,
-        'password': password,
-      },
+      body: {'username': username, 'password': password},
     );
 
     if (response.isSuccess && response.data != null) {
@@ -94,6 +81,25 @@ class AuthRepository {
 
   /// Get current user profile
   Future<User?> getCurrentUser() async {
+    // Try to get from local storage first
+    final currentUserId = await _localStorageService.getCurrentUserId();
+    if (currentUserId != null) {
+      final userData = await _localStorageService.findUserById(currentUserId);
+      if (userData != null) {
+        return User(
+          id: userData['id'] as String,
+          address: userData['wallet_address'] as String? ?? '',
+          name: userData['name'] as String,
+          level: userData['level'] as int? ?? 0,
+          role: userData['role'] as String? ?? 'Employee',
+          supervisorId: userData['parent_id'] as String?,
+          isActive: userData['is_active'] as bool? ?? true,
+          createdAt: DateTime.now(),
+        );
+      }
+    }
+
+    // Fallback to API
     final response = await _apiService.get<Map<String, dynamic>>(
       '${ApiConfig.authEndpoint}/me',
       fromJson: (data) => data as Map<String, dynamic>,
@@ -110,6 +116,7 @@ class AuthRepository {
 
   /// Logout
   Future<void> logout() async {
+    await _apiService.post('${ApiConfig.authEndpoint}/logout');
     _apiService.clearAuthToken();
     await _clearStoredAuth();
   }
@@ -153,13 +160,10 @@ class AuthRepository {
   /// Save user to local storage
   Future<void> _saveUser(User user) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_userKey, jsonEncode({
-      'id': user.id,
-      'name': user.name,
-      'address': user.address,
-      'role': user.role,
-      'level': user.level,
-    }));
+    await prefs.setString(
+      _userKey,
+      jsonEncode({'id': user.id, 'name': user.name, 'address': user.address, 'role': user.role, 'level': user.level}),
+    );
   }
 
   /// Clear stored auth data

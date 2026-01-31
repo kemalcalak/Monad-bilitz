@@ -17,26 +17,20 @@ class AuthCheckRequested extends AuthEvent {
 }
 
 class AuthLoginRequested extends AuthEvent {
-  final String address;
-  final String signature;
+  final String id;
+  final String password;
 
-  const AuthLoginRequested({
-    required this.address,
-    required this.signature,
-  });
+  const AuthLoginRequested({required this.id, required this.password});
 
   @override
-  List<Object?> get props => [address, signature];
+  List<Object?> get props => [id, password];
 }
 
 class AuthLoginWithCredentialsRequested extends AuthEvent {
   final String username;
   final String password;
 
-  const AuthLoginWithCredentialsRequested({
-    required this.username,
-    required this.password,
-  });
+  const AuthLoginWithCredentialsRequested({required this.username, required this.password});
 
   @override
   List<Object?> get props => [username, password];
@@ -106,12 +100,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _authRepository;
   final WebSocketService _webSocketService;
 
-  AuthBloc({
-    required AuthRepository authRepository,
-    required WebSocketService webSocketService,
-  })  : _authRepository = authRepository,
-        _webSocketService = webSocketService,
-        super(const AuthInitial()) {
+  AuthBloc({required AuthRepository authRepository, required WebSocketService webSocketService})
+    : _authRepository = authRepository,
+      _webSocketService = webSocketService,
+      super(const AuthInitial()) {
     on<AuthCheckRequested>(_onAuthCheckRequested);
     on<AuthLoginRequested>(_onAuthLoginRequested);
     on<AuthLoginWithCredentialsRequested>(_onAuthLoginWithCredentials);
@@ -119,15 +111,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthLogoutRequested>(_onAuthLogoutRequested);
   }
 
-  Future<void> _onAuthCheckRequested(
-    AuthCheckRequested event,
-    Emitter<AuthState> emit,
-  ) async {
+  Future<void> _onAuthCheckRequested(AuthCheckRequested event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
-
     try {
       final user = await _authRepository.restoreSession();
-
       if (user != null) {
         await _connectWebSocket();
         emit(AuthAuthenticated(user: user));
@@ -139,41 +126,25 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  Future<void> _onAuthLoginRequested(
-    AuthLoginRequested event,
-    Emitter<AuthState> emit,
-  ) async {
+  Future<void> _onAuthLoginRequested(AuthLoginRequested event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
-
     try {
-      final user = await _authRepository.loginWithWallet(
-        event.address,
-        event.signature,
-      );
-
+      final user = await _authRepository.login(username: event.id, password: event.password);
       if (user != null) {
         await _connectWebSocket();
         emit(AuthAuthenticated(user: user));
       } else {
-        emit(const AuthError(message: 'Login failed'));
+        emit(const AuthError(message: 'Geçersiz kullanıcı ID veya şifre'));
       }
     } catch (e) {
       emit(AuthError(message: e.toString()));
     }
   }
 
-  Future<void> _onAuthLoginWithCredentials(
-    AuthLoginWithCredentialsRequested event,
-    Emitter<AuthState> emit,
-  ) async {
+  Future<void> _onAuthLoginWithCredentials(AuthLoginWithCredentialsRequested event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
-
     try {
-      final user = await _authRepository.login(
-        username: event.username,
-        password: event.password,
-      );
-
+      final user = await _authRepository.login(username: event.username, password: event.password);
       if (user != null) {
         await _connectWebSocket();
         emit(AuthAuthenticated(user: user));
@@ -185,12 +156,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  Future<void> _onAuthRegisterRequested(
-    AuthRegisterRequested event,
-    Emitter<AuthState> emit,
-  ) async {
+  Future<void> _onAuthRegisterRequested(AuthRegisterRequested event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
-
     try {
       final user = await _authRepository.register(
         username: event.username,
@@ -201,10 +168,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       if (user != null) {
         // After registration, auto-login
-        final loggedInUser = await _authRepository.login(
-          username: event.username,
-          password: event.password,
-        );
+        final loggedInUser = await _authRepository.login(username: event.username, password: event.password);
         if (loggedInUser != null) {
           await _connectWebSocket();
           emit(AuthAuthenticated(user: loggedInUser));
@@ -219,10 +183,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  Future<void> _onAuthLogoutRequested(
-    AuthLogoutRequested event,
-    Emitter<AuthState> emit,
-  ) async {
+  Future<void> _onAuthLogoutRequested(AuthLogoutRequested event, Emitter<AuthState> emit) async {
     _webSocketService.disconnect();
     await _authRepository.logout();
     emit(const AuthUnauthenticated());
@@ -239,5 +200,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> close() {
     _webSocketService.disconnect();
     return super.close();
+  }
+}
+
+extension AuthRepositoryRegisterExtension on AuthRepository {
+  Future<User?> register({
+    required String username,
+    required String email,
+    required String password,
+    String? walletAddress,
+  }) {
+    // Temporary fallback to satisfy compile; implement this in AuthRepository for real behavior.
+    throw UnimplementedError('AuthRepository.register is not implemented. Implement it in your AuthRepository.');
   }
 }

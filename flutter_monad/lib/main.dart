@@ -7,6 +7,7 @@ import 'data/repositories/contract_repository.dart';
 import 'data/repositories/hierarchy_repository.dart';
 import 'data/services/api_service.dart';
 import 'data/services/websocket_service.dart';
+import 'data/services/local_storage_service.dart';
 import 'domain/usecases/sign_contract_usecase.dart';
 import 'presentation/blocs/auth_bloc/auth_bloc.dart';
 import 'presentation/blocs/contract_bloc/contract_bloc.dart';
@@ -28,9 +29,13 @@ class SignatureApp extends StatelessWidget {
     // Initialize services
     final apiService = ApiService();
     final webSocketService = WebSocketService();
+    final localStorageService = LocalStorageService();
 
     // Initialize repositories
-    final authRepository = AuthRepository(apiService: apiService);
+    final authRepository = AuthRepository(
+      apiService: apiService,
+      localStorageService: localStorageService,
+    );
     final contractRepository = ContractRepository(apiService: apiService);
     final hierarchyRepository = HierarchyRepository(apiService: apiService);
 
@@ -77,7 +82,6 @@ class AuthWrapper extends StatelessWidget {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         if (state is AuthLoading || state is AuthInitial) {
-          // Show loading screen while checking auth state
           return Scaffold(
             backgroundColor: AppTheme.backgroundColor,
             body: Center(
@@ -113,11 +117,11 @@ class AuthWrapper extends StatelessWidget {
             ),
           );
         }
-        
+
         if (state is AuthAuthenticated) {
           return const MainNavigationPage();
         }
-        
+
         // AuthUnauthenticated or AuthError - show login page
         return const LoginPage();
       },
