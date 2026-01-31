@@ -5,6 +5,8 @@ import '../../domain/entities/contract.dart';
 import '../blocs/contract_bloc/contract_bloc.dart';
 import '../blocs/hierarchy_bloc/hierarchy_bloc.dart';
 import '../widgets/contract_card.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_monad/core/local_task_storage.dart';
 
 /// Task model - JSON'dan yüklenen görev verisi
 class Task {
@@ -243,9 +245,29 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
   }
 
   void _loadTasksFromBackend() {
-    // Load all contracts and map them to Task format
+    // Load tasks from local JSON storage (seeded from assets if needed)
     setState(() => _isLoadingTasks = true);
-    Future.delayed(Duration.zero, () {
+    Future.delayed(Duration.zero, () async {
+      final storage = LocalTaskStorage();
+      final items = await storage.readTasks();
+      setState(() {
+        _tasks = items
+            .map(
+              (t) => Task(
+                id: (t['id'] ?? DateTime.now().millisecondsSinceEpoch.toString()).toString(),
+                title: (t['title'] ?? '') as String,
+                shortDescription: (t['shortDescription'] ?? t['short_description'] ?? '') as String,
+                longDescription: (t['longDescription'] ?? t['long_description'] ?? '') as String,
+                priority: (t['priority'] ?? 'medium') as String,
+                isError: (t['isError'] ?? t['is_error'] ?? false) as bool,
+                createdAt: (t['createdAt'] ?? DateTime.now().toIso8601String()) as String,
+              ),
+            )
+            .toList();
+        _isLoadingTasks = false;
+      });
+
+      // Also keep existing contract -> task mapping active if the bloc emits
       final state = context.read<ContractBloc>().state;
       if (state is ContractsLoaded) {
         _onContractsLoadedAsTasks(state);
@@ -339,11 +361,11 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                             color: AppTheme.buttonColor,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(Icons.pending_actions, color: Colors.white, size: 20),
+                          child: const Icon(Icons.task_alt, color: Colors.white, size: 20),
                         ),
                         const SizedBox(width: 12),
                         const Text(
-                          'Contracts',
+                          'Tasks',
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.headingColor),
                         ),
                         const Spacer(),
@@ -441,7 +463,8 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                     const SizedBox(height: 16),
                     const Divider(height: 1, color: AppTheme.dividerColor),
                     const SizedBox(height: 16),
-                    Expanded(child: _buildAssignedTasksList()),
+                    // Show contracts (pending approvals) in the right/green column
+                    Expanded(child: _buildContractList(ContractStatusEnum.pendingApproval)),
                   ],
                 ),
               ),
@@ -606,7 +629,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                     const SizedBox(width: 16),
                     const Expanded(
                       child: Text(
-                        'Create New Contract',
+                        'Create New Task',
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.headingColor),
                       ),
                     ),
@@ -812,7 +835,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       if (titleController.text.trim().isEmpty || descriptionController.text.trim().isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -825,21 +848,24 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                         return;
                       }
 
-                      // Create contract via backend
+                      // Create a local task (name forced to 'new task') — no backend contract created
                       final urgency = isError ? 'critical' : selectedPriority;
-                      this.context.read<ContractBloc>().add(
-                        ContractCreateRequested(
-                          title: titleController.text.trim(),
-                          content: descriptionController.text.trim(),
-                          contractType: 'operational',
-                          urgency: urgency,
-                        ),
-                      );
+                      final storage = LocalTaskStorage();
+                      final taskMap = {
+                        'id': DateTime.now().millisecondsSinceEpoch.toString(),
+                        'title': 'new task',
+                        'shortDescription': descriptionController.text.trim(),
+                        'longDescription': '',
+                        'priority': urgency,
+                        'isError': isError,
+                        'createdAt': DateTime.now().toIso8601String(),
+                      };
+                      await storage.appendTask(taskMap);
 
                       Navigator.pop(context);
 
-                      // Refresh contracts list
-                      _loadContracts();
+                      // Refresh tasks list (no contract actions)
+                      _loadTasksFromBackend();
 
                       ScaffoldMessenger.of(this.context).showSnackBar(
                         SnackBar(
