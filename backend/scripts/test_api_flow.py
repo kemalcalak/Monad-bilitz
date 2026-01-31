@@ -122,8 +122,19 @@ async def test_hierarchy(token):
 async def main():
     print(f"{COLORS['OKBLUE']}STARING API END-TO-END TEST...{COLORS['ENDC']}")
     
-    # Run Auth
-    token = await test_auth_flow()
+    # 0. Seed Data
+    print_step("Seeding Database with Demo Data")
+    # Execute seed_data script functionality directly or via sub-process
+    import subprocess
+    try:
+        subprocess.run(["python", "-m", "app.db.seed_data"], check=True, stdout=subprocess.DEVNULL)
+        print_success("Database Seeded Successfully")
+    except Exception as e:
+        print_fail(f"Seeding failed: {e}")
+
+    # Run Auth (Using seeded CEO user)
+    # The seed_data.py creates: username="ceo_user", password="password123"
+    token = await test_auth_flow_seeded()
     
     if token:
         # Run Contract Tests
@@ -133,6 +144,21 @@ async def main():
         await test_hierarchy(token)
         
     print(f"\n{COLORS['OKGREEN']}ALL TESTS COMPLETED SUCCESSFULLY! 🚀{COLORS['ENDC']}")
+
+async def test_auth_flow_seeded():
+    """Test Login with Seeded User"""
+    print_step("Testing Authentication Flow (Seeded User)")
+    
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        # Login CEO (seeded)
+        login_data = {"username": "ceo_user", "password": "password123"}
+        resp = await client.post(f"{BASE_URL}/auth/login", data=login_data)
+        if resp.status_code == 200:
+            token = resp.json()["access_token"]
+            print_success("Login (CEO - Seeded)")
+            return token
+        else:
+            print_fail(f"Login failed: {resp.text}")
 
 if __name__ == "__main__":
     asyncio.run(main())

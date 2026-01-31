@@ -85,36 +85,30 @@ async def create_contract(
     5. Submit to blockchain
     6. Notify suggested authorities via Socket.IO
     """
-    # Step 1: Smart Router - suggest authorities
-    router_agent = get_smart_router_agent()
-    routing = await router_agent.analyze_and_route(
-        contract_title=contract_data.title,
+    # Step 1: Analyze with Contract Team (Agentic Workflow)
+    from app.core.agents.contract_team import get_contract_team
+    
+    team = get_contract_team()
+    analysis = await team.analyze_contract(
+        title=contract_data.title,
+        content=contract_data.content,
         contract_type=contract_data.contract_type,
         amount=contract_data.amount,
-        urgency=contract_data.urgency,
-        description=contract_data.content
+        urgency=contract_data.urgency
     )
     
-    # Step 2: Compliance check
-    compliance_agent = get_compliance_agent()
-    compliance = await compliance_agent.check_compliance(
-        contract_title=contract_data.title,
-        contract_type=contract_data.contract_type,
-        amount=contract_data.amount,
-        description=contract_data.content,
-        required_score=router_agent.calculate_total_score(routing.suggested_authorities),
-        suggested_authorities=routing.suggested_authorities
-    )
-    
-    if not compliance.is_compliant:
+    # Check compliance based on team verdict
+    if analysis.final_verdict == "REJECTED" or not analysis.is_compliant:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={
-                "message": "Contract does not meet compliance requirements",
-                "violations": compliance.violations,
-                "recommendations": compliance.recommendations
+                "message": "Contract rejected by AI Compliance Team",
+                "risk_assessment": analysis.risk_assessment,
+                "summary": analysis.summary
             }
         )
+        
+    suggested_authorities = analysis.suggested_route
     
     # Step 3: Calculate required score
     hierarchy_service = HierarchyService(db)
@@ -339,11 +333,17 @@ async def sign_contract(
             detail="You do not have authority to sign contracts"
         )
     
+    # Generate signature hash (simulating cryptographic signature)
+    import hashlib
+    sig_data = f"{contract.contract_id}:{current_user.id}:{datetime.utcnow().isoformat()}"
+    signature_hash = hashlib.sha256(sig_data.encode()).hexdigest()
+    
     # Create signature
     signature = Signature(
         contract_id=contract.id,
         signer_id=current_user.id,
         authority_score=authority_score,
+        signature_hash=f"0x{signature_hash}", # Ethereum style prefix
         signed_at=datetime.utcnow()
     )
     
