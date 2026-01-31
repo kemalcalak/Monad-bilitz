@@ -5,7 +5,69 @@ import '../../core/constants/hierarchy_constants.dart';
 import '../../data/models/hierarchy_model.dart';
 import '../blocs/hierarchy_bloc/hierarchy_bloc.dart';
 
-/// Hierarchy page - Organization tree visualization
+// Blockchain düğüm modeli - Backend'den gelecek veri yapısı
+class BlockchainNode {
+  final String id;
+  final String name;
+  final String? parentId;  // Parent node'un ID'si
+  final String? parentName; // Parent node'un adı (graph için)
+  final String walletAddress;
+  final int level;  // 0: CEO, 1: Director, 2: Manager, 3: TeamLead, 4: Employee
+  final String role;
+  final bool isActive;
+  final int childrenCount;
+
+  BlockchainNode({
+    required this.id,
+    required this.name,
+    this.parentId,
+    this.parentName,
+    required this.walletAddress,
+    required this.level,
+    required this.role,
+    this.isActive = true,
+    this.childrenCount = 0,
+  });
+
+  // JSON'dan oluşturucu - Backend API'den gelen veri için
+  factory BlockchainNode.fromJson(Map<String, dynamic> json) {
+    return BlockchainNode(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      parentId: json['parent_id'] as String?,
+      parentName: json['parent_name'] as String?,
+      walletAddress: json['wallet_address'] as String,
+      level: json['level'] as int,
+      role: json['role'] as String,
+      isActive: json['is_active'] as bool? ?? true,
+      childrenCount: json['children_count'] as int? ?? 0,
+    );
+  }
+
+  // JSON'a dönüştürücü
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'parent_id': parentId,
+      'parent_name': parentName,
+      'wallet_address': walletAddress,
+      'level': level,
+      'role': role,
+      'is_active': isActive,
+      'children_count': childrenCount,
+    };
+  }
+
+  // Node tipini level'a göre belirle (graph görselleştirmesi için)
+  String get nodeType {
+    if (level == 0) return 'root';
+    if (level <= 2) return 'validator';
+    return 'node';
+  }
+}
+
+/// Hierarchy page - Organization tree visualization with blockchain style
 class HierarchyPage extends StatefulWidget {
   const HierarchyPage({super.key});
 
@@ -14,6 +76,9 @@ class HierarchyPage extends StatefulWidget {
 }
 
 class _HierarchyPageState extends State<HierarchyPage> {
+  List<BlockchainNode> _nodes = [];
+  String? _selectedFilterNode;
+
   @override
   void initState() {
     super.initState();
@@ -24,19 +89,79 @@ class _HierarchyPageState extends State<HierarchyPage> {
     context.read<HierarchyBloc>().add(const HierarchyLoadRequested());
   }
 
+  // HierarchyNodeModel'den BlockchainNode listesi oluştur
+  List<BlockchainNode> _convertToBlockchainNodes(HierarchyNodeModel root) {
+    List<BlockchainNode> nodes = [];
+
+    void traverse(HierarchyNodeModel node, String? parentName) {
+      nodes.add(BlockchainNode(
+        id: node.id,
+        name: node.name,
+        parentId: node.supervisorId,
+        parentName: parentName,
+        walletAddress: node.address,
+        level: node.level,
+        role: node.role,
+        isActive: node.isActive,
+        childrenCount: node.children.length,
+      ));
+
+      for (final child in node.children) {
+        traverse(child, node.name);
+      }
+    }
+
+    traverse(root, null);
+    return nodes;
+  }
+
+  List<BlockchainNode> _getFilteredNodes() {
+    if (_selectedFilterNode == null || _nodes.isEmpty) {
+      return _nodes;
+    }
+
+    final selectedNode = _nodes.firstWhere(
+      (n) => n.name == _selectedFilterNode,
+      orElse: () => _nodes.first,
+    );
+
+    Set<String> connectedNodes = {};
+    String? currentParent = selectedNode.parentName;
+    connectedNodes.add(selectedNode.name);
+
+    while (currentParent != null) {
+      connectedNodes.add(currentParent);
+      final parentNode = _nodes.firstWhere(
+        (n) => n.name == currentParent,
+        orElse: () => BlockchainNode(
+          id: '',
+          name: '',
+          walletAddress: '',
+          level: 0,
+          role: '',
+        ),
+      );
+      currentParent = parentNode.parentName;
+    }
+
+    void findChildren(String nodeName) {
+      for (final node in _nodes) {
+        if (node.parentName == nodeName && !connectedNodes.contains(node.name)) {
+          connectedNodes.add(node.name);
+          findChildren(node.name);
+        }
+      }
+    }
+
+    findChildren(selectedNode.name);
+
+    return _nodes.where((n) => connectedNodes.contains(n.name)).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      appBar: AppBar(
-        title: const Text('Organization Hierarchy'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadHierarchy,
-          ),
-        ],
-      ),
       body: BlocBuilder<HierarchyBloc, HierarchyState>(
         builder: (context, state) {
           if (state is HierarchyLoading) {
@@ -44,24 +169,43 @@ class _HierarchyPageState extends State<HierarchyPage> {
           }
 
           if (state is HierarchyTreeLoaded) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (state.stats != null) _buildStatsRow(state.stats!),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Organization Structure',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.headingColor,
+            // HierarchyNodeModel'i BlockchainNode listesine dönüştür
+            _nodes = _convertToBlockchainNodes(state.tree);
+            final filteredNodes = _getFilteredNodes();
+
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Başlık
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Ağ Hiyerarşisi',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1A1A1A),
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.refresh),
+                          onPressed: _loadHierarchy,
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildHierarchyTree(state.tree),
-                ],
+                    const SizedBox(height: 24),
+
+                    // Hiyerarşi Görselleştirmesi (tam genişlik)
+                    Expanded(
+                      child: _buildHierarchyContainer(filteredNodes),
+                    ),
+                  ],
+                ),
               ),
             );
           }
@@ -96,182 +240,124 @@ class _HierarchyPageState extends State<HierarchyPage> {
     );
   }
 
-  Widget _buildStatsRow(HierarchyStatsModel stats) {
+  Widget _buildHierarchyContainer(List<BlockchainNode> filteredNodes) {
     return Container(
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.dividerColor),
+        color: const Color(0xFFFFFFFF),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: _buildStatItem('Total Members', stats.totalMembers.toString()),
+          // Filtreleme başlığı
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: _buildFilterDropdown(),
           ),
-          Container(width: 1, height: 40, color: AppTheme.dividerColor),
+
+          // Ağaç görünümü
           Expanded(
-            child: _buildStatItem('Active', stats.activeMembers.toString()),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: _buildBlockchainGraph(filteredNodes),
+            ),
           ),
-          Container(width: 1, height: 40, color: AppTheme.dividerColor),
-          Expanded(
-            child: _buildStatItem('Pending Actions', stats.pendingContracts.toString()),
+
+          // Alt bilgi (legend)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildLegendItem('CEO/Root', const Color(0xFF1A1A1A)),
+                const SizedBox(width: 24),
+                _buildLegendItem('Director/Manager', const Color(0xFF444444)),
+                const SizedBox(width: 24),
+                _buildLegendItem('Employee', const Color(0xFF888888)),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.headingColor,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppTheme.bodyTextColor,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHierarchyTree(HierarchyNodeModel node, {int depth = 0}) {
-    final levelColor = Color(HierarchyConstants.levelColors[node.level] ?? 0xFF666666);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildNodeCard(node, levelColor, depth),
-        if (node.children.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(left: 24),
-            child: Column(
-              children: node.children
-                  .map((child) => _buildHierarchyTree(child, depth: depth + 1))
-                  .toList(),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildNodeCard(HierarchyNodeModel node, Color levelColor, int depth) {
+  Widget _buildFilterDropdown() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F5F5),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+      ),
       child: Row(
         children: [
-          if (depth > 0) ...[
-            Container(
-              width: 20,
-              height: 2,
-              color: AppTheme.dividerColor,
+          const Icon(Icons.filter_list, color: Color(0xFF666666), size: 20),
+          const SizedBox(width: 12),
+          const Text(
+            'Filter Node:',
+            style: TextStyle(
+              fontSize: 14,
+              color: Color(0xFF666666),
+              fontWeight: FontWeight.w500,
             ),
-          ],
+          ),
+          const SizedBox(width: 12),
           Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.dividerColor),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: levelColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Center(
-                      child: Text(
-                        node.name.isNotEmpty ? node.name[0].toUpperCase() : '?',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: levelColor,
-                        ),
-                      ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String?>(
+                value: _selectedFilterNode,
+                hint: const Text(
+                  'All Network',
+                  style: TextStyle(fontSize: 14, color: Color(0xFF666666)),
+                ),
+                isExpanded: true,
+                icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF666666)),
+                style: const TextStyle(fontSize: 14, color: Color(0xFF1A1A1A)),
+                dropdownColor: const Color(0xFFFFFFFF),
+                items: [
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text(
+                      'All Network',
+                      style: TextStyle(fontSize: 14, color: Color(0xFF666666)),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          node.name,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.headingColor,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: levelColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                node.role,
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w500,
-                                  color: levelColor,
-                                ),
-                              ),
+                  ..._nodes.map(
+                    (node) => DropdownMenuItem<String?>(
+                      value: node.name,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: _getNodeColor(node.nodeType),
+                              shape: BoxShape.circle,
                             ),
-                            if (node.children.isNotEmpty) ...[
-                              const SizedBox(width: 8),
-                              Text(
-                                '${node.descendantsCount} subordinates',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppTheme.bodyTextColor,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (!node.isActive)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppTheme.errorColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        'Inactive',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w500,
-                          color: AppTheme.errorColor,
-                        ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            node.name,
+                            style: const TextStyle(fontSize: 14, color: Color(0xFF1A1A1A)),
+                          ),
+                        ],
                       ),
                     ),
-                  IconButton(
-                    icon: const Icon(Icons.more_vert, color: AppTheme.bodyTextColor),
-                    onPressed: () => _showMemberOptions(node),
                   ),
                 ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedFilterNode = value;
+                  });
+                },
               ),
             ),
           ),
@@ -280,47 +366,45 @@ class _HierarchyPageState extends State<HierarchyPage> {
     );
   }
 
-  void _showMemberOptions(HierarchyNodeModel node) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  Color _getNodeColor(String type) {
+    switch (type) {
+      case 'root':
+        return const Color(0xFF1A1A1A);
+      case 'validator':
+        return const Color(0xFF444444);
+      default:
+        return const Color(0xFF888888);
+    }
+  }
+
+  Widget _buildLegendItem(String label, Color color) {
+    return Row(
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBlockchainGraph(List<BlockchainNode> nodes) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAFAFA),
+        borderRadius: BorderRadius.circular(12),
       ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text('View Details'),
-              onTap: () {
-                Navigator.pop(context);
-                context.read<HierarchyBloc>().add(
-                  HierarchyMemberDetailRequested(memberId: node.id),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.person_add),
-              title: const Text('Add Subordinate'),
-              onTap: () {
-                Navigator.pop(context);
-                _showAddMemberDialog(supervisorId: node.id);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.copy),
-              title: const Text('Copy Address'),
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Address copied')),
-                );
-              },
-            ),
-          ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: CustomPaint(
+          painter: BlockchainTreePainter(nodes: nodes),
+          child: const SizedBox.expand(),
         ),
       ),
     );
@@ -353,10 +437,7 @@ class _HierarchyPageState extends State<HierarchyPage> {
                 value: selectedLevel,
                 decoration: const InputDecoration(labelText: 'Role Level'),
                 items: HierarchyConstants.levelNames.entries
-                    .map((e) => DropdownMenuItem(
-                          value: e.key,
-                          child: Text(e.value),
-                        ))
+                    .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
                     .toList(),
                 onChanged: (value) {
                   if (value != null) {
@@ -390,4 +471,142 @@ class _HierarchyPageState extends State<HierarchyPage> {
       ),
     );
   }
+}
+
+// Custom painter for blockchain tree visualization
+class BlockchainTreePainter extends CustomPainter {
+  final List<BlockchainNode> nodes;
+
+  BlockchainTreePainter({required this.nodes});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF666666)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+
+    final nodePaint = Paint()..style = PaintingStyle.fill;
+
+    final Map<String, Offset> positions = {};
+    final levels = _calculateLevels();
+
+    for (var level = 0; level < levels.length; level++) {
+      final nodesAtLevel = levels[level];
+      final yPosition = 60.0 +
+          level * (size.height - 120) / (levels.length > 1 ? levels.length - 1 : 1);
+
+      for (var i = 0; i < nodesAtLevel.length; i++) {
+        final xPosition = (size.width / (nodesAtLevel.length + 1)) * (i + 1);
+        positions[nodesAtLevel[i].name] = Offset(xPosition, yPosition);
+      }
+    }
+
+    // Bağlantı çizgilerini çiz
+    for (final node in nodes) {
+      if (node.parentName != null && positions.containsKey(node.parentName)) {
+        final start = positions[node.parentName]!;
+        final end = positions[node.name]!;
+
+        final path = Path();
+        path.moveTo(start.dx, start.dy);
+        final midY = (start.dy + end.dy) / 2;
+        path.cubicTo(start.dx, midY, end.dx, midY, end.dx, end.dy);
+
+        canvas.drawPath(path, paint);
+      }
+    }
+
+    // Node'ları çiz
+    for (final node in nodes) {
+      if (positions.containsKey(node.name)) {
+        final pos = positions[node.name]!;
+        final radius = _getNodeRadius(node.nodeType);
+
+        nodePaint.color = _getNodeColor(node.nodeType);
+
+        // Inactive nodes için farklı görünüm
+        if (!node.isActive) {
+          nodePaint.color = const Color(0xFFCCCCCC);
+        }
+
+        canvas.drawCircle(pos, radius + 2, Paint()..color = const Color(0xFFFFFFFF));
+        canvas.drawCircle(pos, radius, nodePaint);
+
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: node.name,
+            style: TextStyle(
+              color: node.isActive ? const Color(0xFF666666) : const Color(0xFFAAAAAA),
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        );
+        textPainter.layout();
+        textPainter.paint(
+          canvas,
+          Offset(pos.dx - textPainter.width / 2, pos.dy + radius + 8),
+        );
+      }
+    }
+  }
+
+  List<List<BlockchainNode>> _calculateLevels() {
+    final Map<String, int> nodeLevels = {};
+    final List<List<BlockchainNode>> levels = [];
+
+    for (final node in nodes) {
+      if (node.parentName == null) {
+        nodeLevels[node.name] = 0;
+      }
+    }
+
+    var changed = true;
+    while (changed) {
+      changed = false;
+      for (final node in nodes) {
+        if (node.parentName != null &&
+            nodeLevels.containsKey(node.parentName) &&
+            !nodeLevels.containsKey(node.name)) {
+          nodeLevels[node.name] = nodeLevels[node.parentName]! + 1;
+          changed = true;
+        }
+      }
+    }
+
+    final maxLevel =
+        nodeLevels.values.isEmpty ? 0 : nodeLevels.values.reduce((a, b) => a > b ? a : b);
+    for (var i = 0; i <= maxLevel; i++) {
+      levels.add(nodes.where((n) => nodeLevels[n.name] == i).toList());
+    }
+
+    return levels;
+  }
+
+  double _getNodeRadius(String type) {
+    switch (type) {
+      case 'root':
+        return 20;
+      case 'validator':
+        return 14;
+      default:
+        return 10;
+    }
+  }
+
+  Color _getNodeColor(String type) {
+    switch (type) {
+      case 'root':
+        return const Color(0xFF1A1A1A);
+      case 'validator':
+        return const Color(0xFF444444);
+      default:
+        return const Color(0xFF888888);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

@@ -1,0 +1,127 @@
+{
+  "hierarchy_nodes": [
+    {
+      "id": "ceo_001",
+      "name": "Alice Johnson",
+      "parent_id": null,
+      "parent_name": null,
+      "wallet_address": "0x1234567890abcdef1234567890abcdef12345678",
+      "level": 0,
+      "role": "CEO",
+      "is_active": true,
+      "children_count": 3
+    },
+    {
+      "id": "dir_001",
+      "name": "Bob Smith",
+      "parent_id": "ceo_001",
+      "parent_name": "Alice Johnson",
+      "wallet_address": "0x2345678901abcdef2345678901abcdef23456789",
+      "level": 1,
+      "role": "Tech Director",
+      "is_active": true,
+      "children_count": 2
+    },
+    {
+      "id": "dir_002",
+      "name": "Helen Martinez",
+      "parent_id": "ceo_001",
+      "parent_name": "Alice Johnson",
+      "wallet_address": "0x8901234567abcdef8901234567abcdef89012345",
+      "level": 1,
+      "role": "Finance Director",
+      "is_active": true,
+      "children_count": 1
+    },
+    {
+      "id": "dir_003",
+      "name": "Kevin Park",
+      "parent_id": "ceo_001",
+      "parent_name": "Alice Johnson",
+      "wallet_address": "0xb234567890abcdefb234567890abcdefb2345678",
+      "level": 1,
+      "role": "Operations Director",
+      "is_active": false,
+      "children_count": 0
+    },
+    {
+      "id": "mgr_001",
+      "name": "Charlie Brown",
+      "parent_id": "dir_001",
+      "parent_name": "Bob Smith",
+      "wallet_address": "0x3456789012abcdef3456789012abcdef34567890",
+      "level": 2,
+      "role": "Engineering Manager",
+      "is_active": true,
+      "children_count": 2
+    },
+    {
+      "id": "mgr_002",
+      "name": "Fiona Garcia",
+      "parent_id": "dir_001",
+      "parent_name": "Bob Smith",
+      "wallet_address": "0x6789012345abcdef6789012345abcdef67890123",
+      "level": 2,
+      "role": "Product Manager",
+      "is_active": true,
+      "children_count": 1
+    },
+    {
+      "id": "mgr_003",
+      "name": "Ivan Chen",
+      "parent_id": "dir_002",
+      "parent_name": "Helen Martinez",
+      "wallet_address": "0x9012345678abcdef9012345678abcdef90123456",
+      "level": 2,
+      "role": "Finance Manager",
+      "is_active": true,
+      "children_count": 1
+    },
+    {
+      "id": "emp_001",
+      "name": "Diana Lee",
+      "parent_id": "mgr_001",
+      "parent_name": "Charlie Brown",
+      "wallet_address": "0x4567890123abcdef4567890123abcdef45678901",
+      "level": 4,
+      "role": "Senior Developer",
+      "is_active": true,
+      "children_count": 0
+    },
+    {
+      "id": "emp_002",
+      "name": "Edward Kim",
+      "parent_id": "mgr_001",
+      "parent_name": "Charlie Brown",
+      "wallet_address": "0x5678901234abcdef5678901234abcdef56789012",
+      "level": 4,
+      "role": "Developer",
+      "is_active": true,
+      "children_count": 0
+    },
+    {
+      "id": "emp_003",
+      "name": "George Wilson",
+      "parent_id": "mgr_002",
+      "parent_name": "Fiona Garcia",
+      "wallet_address": "0x7890123456abcdef7890123456abcdef78901234",
+      "level": 4,
+      "role": "UI Designer",
+      "is_active": true,
+      "children_count": 0
+    },
+    {
+      "id": "emp_004",
+      "name": "Julia Roberts",
+      "parent_id": "mgr_003",
+      "parent_name": "Ivan Chen",
+      "wallet_address": "0xa123456789abcdefa123456789abcdefa1234567",
+      "level": 4,
+      "role": "Accountant",
+      "is_active": true,
+      "children_count": 0
+    }
+  ],
+  "api_endpoint": "GET /api/hierarchy/nodes",
+  "description": "Backend'den gelecek hiyerarşi node listesi. Her node düz bir liste elemanı olarak gelir, parent_name alanı ile graph bağlantıları oluşturulur."
+}
