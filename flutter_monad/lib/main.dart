@@ -6,6 +6,7 @@ import 'data/repositories/auth_repository.dart';
 import 'data/repositories/contract_repository.dart';
 import 'data/repositories/hierarchy_repository.dart';
 import 'data/services/api_service.dart';
+import 'data/services/local_storage_service.dart';
 import 'domain/usecases/sign_contract_usecase.dart';
 import 'presentation/blocs/auth_bloc/auth_bloc.dart';
 import 'presentation/blocs/contract_bloc/contract_bloc.dart';
@@ -13,6 +14,7 @@ import 'presentation/blocs/hierarchy_bloc/hierarchy_bloc.dart';
 import 'presentation/pages/dashboard_page.dart';
 import 'presentation/pages/contracts_page.dart';
 import 'presentation/pages/hierarchy_page.dart';
+import 'presentation/pages/login_page.dart';
 
 void main() {
   runApp(const SignatureApp());
@@ -25,9 +27,13 @@ class SignatureApp extends StatelessWidget {
   Widget build(BuildContext context) {
     // Initialize services
     final apiService = ApiService();
+    final localStorageService = LocalStorageService();
     
     // Initialize repositories
-    final authRepository = AuthRepository(apiService: apiService);
+    final authRepository = AuthRepository(
+      apiService: apiService,
+      localStorageService: localStorageService,
+    );
     final contractRepository = ContractRepository(apiService: apiService);
     final hierarchyRepository = HierarchyRepository(apiService: apiService);
     
@@ -56,8 +62,34 @@ class SignatureApp extends StatelessWidget {
         title: 'Signature',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        home: const MainNavigationPage(),
+        home: const AuthWrapper(),
       ),
+    );
+  }
+}
+
+/// Wrapper widget that shows LoginPage or MainNavigationPage based on auth state
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, state) {
+        if (state is AuthLoading || state is AuthInitial) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+        
+        if (state is AuthAuthenticated) {
+          return const MainNavigationPage();
+        }
+        
+        return const LoginPage();
+      },
     );
   }
 }
