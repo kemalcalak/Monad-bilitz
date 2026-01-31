@@ -67,17 +67,24 @@ class MainNavigationPage extends StatefulWidget {
   const MainNavigationPage({super.key});
 
   @override
-  State<MainNavigationPage> createState() => _MainNavigationPageState();
+  State<MainNavigationPage> createState() => MainNavigationPageState();
 }
 
-class _MainNavigationPageState extends State<MainNavigationPage> {
+class MainNavigationPageState extends State<MainNavigationPage> {
   int _currentIndex = 0;
-  
+
   final List<Widget> _pages = const [
     DashboardPage(),
     ContractsPage(),
     HierarchyPage(),
   ];
+
+  // Method to programmatically change tabs (used by dashboard)
+  void setTab(int index) {
+    if (index >= 0 && index < _pages.length) {
+      setState(() => _currentIndex = index);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
