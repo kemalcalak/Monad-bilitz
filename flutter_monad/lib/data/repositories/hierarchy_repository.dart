@@ -7,48 +7,44 @@ import '../../domain/entities/user.dart';
 /// Repository for hierarchy operations
 class HierarchyRepository {
   final ApiService _apiService;
-  
+
   // Flag to use mock data when API is unavailable
-  // Set to false to use real backend API
   static const bool _useMockData = false;
-  
+
   HierarchyRepository({required ApiService apiService}) : _apiService = apiService;
-  
+
   /// Get full hierarchy tree (from backend graph endpoint)
   Future<HierarchyNodeModel?> getHierarchyTree() async {
     if (_useMockData) {
       return _getMockHierarchyTree();
     }
-    
-    // Backend uses /graph endpoint which returns {nodes: [], edges: []}
+
     final response = await _apiService.get<Map<String, dynamic>>(
       '${ApiConfig.hierarchyEndpoint}/graph',
       fromJson: (data) => data as Map<String, dynamic>,
     );
-    
+
     if (response.isSuccess && response.data != null) {
-      // Convert graph data to HierarchyNodeModel tree
       return _convertGraphToTree(response.data!);
     }
-    
-    // Fall back to mock data if API fails
+
     return _getMockHierarchyTree();
   }
-  
+
   /// Convert backend graph format to tree structure
   HierarchyNodeModel? _convertGraphToTree(Map<String, dynamic> graphData) {
     final nodes = graphData['nodes'] as List<dynamic>? ?? [];
     final edges = graphData['edges'] as List<dynamic>? ?? [];
-    
+
     if (nodes.isEmpty) return null;
-    
+
     // Build node map
     final nodeMap = <String, Map<String, dynamic>>{};
     for (final node in nodes) {
       final nodeData = node as Map<String, dynamic>;
       nodeMap[nodeData['id'] as String] = nodeData;
     }
-    
+
     // Build children map from edges
     final childrenMap = <String, List<String>>{};
     for (final edge in edges) {
@@ -59,7 +55,7 @@ class HierarchyRepository {
         childrenMap.putIfAbsent(source, () => []).add(target);
       }
     }
-    
+
     // Find root node (node with no parent or level 0)
     String? rootId;
     for (final node in nodes) {
@@ -69,17 +65,16 @@ class HierarchyRepository {
         break;
       }
     }
-    
+
     if (rootId == null && nodes.isNotEmpty) {
       rootId = (nodes.first as Map<String, dynamic>)['id'] as String;
     }
-    
+
     if (rootId == null) return null;
-    
-    // Build tree recursively
+
     return _buildNodeFromGraph(rootId, nodeMap, childrenMap);
   }
-  
+
   HierarchyNodeModel _buildNodeFromGraph(
     String nodeId,
     Map<String, Map<String, dynamic>> nodeMap,
@@ -87,91 +82,127 @@ class HierarchyRepository {
   ) {
     final data = nodeMap[nodeId]!;
     final childIds = childrenMap[nodeId] ?? [];
-    
+
     return HierarchyNodeModel(
       id: nodeId,
       name: data['group_name'] as String? ?? data['display_name'] as String? ?? 'Unknown',
       address: data['wallet_address'] as String? ?? '',
       level: (data['level'] as num?)?.toInt() ?? 0,
       role: data['display_name'] as String? ?? data['group_name'] as String? ?? '',
-      supervisorId: null, // Will be set via edges
+      supervisorId: null,
       isActive: true,
       children: childIds.map((id) => _buildNodeFromGraph(id, nodeMap, childrenMap)).toList(),
     );
   }
-  
-  /// Get hierarchy statistics (from backend groups endpoint)
+
+  /// Get hierarchy statistics (from backend groups + contracts endpoints)
   Future<HierarchyStatsModel?> getHierarchyStats() async {
     if (_useMockData) {
       return _getMockHierarchyStats();
     }
-    
-    // Get groups to calculate stats
-    final response = await _apiService.get<List<dynamic>>(
+
+    // Get groups to calculate member stats
+    final groupsResponse = await _apiService.get<List<dynamic>>(
       '${ApiConfig.hierarchyEndpoint}/groups',
       fromJson: (data) => data as List<dynamic>,
     );
-    
-    if (response.isSuccess && response.data != null) {
-      // Calculate stats from groups
-      int totalMembers = 0;
-      for (final group in response.data!) {
+
+    // Get pending contracts count
+    final pendingResponse = await _apiService.get<List<dynamic>>(
+      ApiConfig.contractsEndpoint,
+      queryParams: {'status_filter': 'pending'},
+      fromJson: (data) => data as List<dynamic>,
+    );
+
+    int totalMembers = 0;
+    final levelDistribution = <String, int>{};
+
+    if (groupsResponse.isSuccess && groupsResponse.data != null) {
+      for (final group in groupsResponse.data!) {
         final groupData = group as Map<String, dynamic>;
-        totalMembers += (groupData['user_count'] as num?)?.toInt() ?? 0;
+        final count = (groupData['user_count'] as num?)?.toInt() ?? 0;
+        final level = (groupData['level'] as num?)?.toInt() ?? 0;
+        totalMembers += count;
+        levelDistribution['$level'] = (levelDistribution['$level'] ?? 0) + count;
       }
-      
-      return HierarchyStatsModel(
-        totalMembers: totalMembers,
-        activeMembers: totalMembers, // All members are active for now
-        pendingContracts: 0, // Will get from contracts endpoint
-        pendingSignatures: 0, // Will get from contracts endpoint
-        levelDistribution: const {},
-      );
     }
-    
-    return _getMockHierarchyStats();
+
+    int pendingContracts = 0;
+    if (pendingResponse.isSuccess && pendingResponse.data != null) {
+      pendingContracts = pendingResponse.data!.length;
+    }
+
+    if (totalMembers == 0 && !groupsResponse.isSuccess) {
+      return _getMockHierarchyStats();
+    }
+
+    return HierarchyStatsModel(
+      totalMembers: totalMembers,
+      activeMembers: totalMembers,
+      pendingContracts: pendingContracts,
+      pendingSignatures: 0,
+      levelDistribution: levelDistribution,
+    );
   }
-  
-  /// Get all members
+
+  /// Get all members (from backend /hierarchy/members endpoint)
   Future<List<User>> getAllMembers() async {
     if (_useMockData) {
       return _getMockMembers();
     }
-    
+
     final response = await _apiService.get<List<dynamic>>(
       '${ApiConfig.hierarchyEndpoint}/members',
       fromJson: (data) => data as List<dynamic>,
     );
-    
+
     if (response.isSuccess && response.data != null) {
       return response.data!
           .map((json) => UserModel.fromJson(json as Map<String, dynamic>).toEntity())
           .toList();
     }
-    
+
     return _getMockMembers();
   }
-  
+
   /// Get member by ID
   Future<User?> getMemberById(String id) async {
     if (_useMockData) {
       final members = _getMockMembers();
       return members.where((m) => m.id == id).firstOrNull;
     }
-    
-    final response = await _apiService.get<Map<String, dynamic>>(
-      '${ApiConfig.hierarchyEndpoint}/members/$id',
+
+    // Use the members list and filter client-side
+    final members = await getAllMembers();
+    return members.where((m) => m.id == id).firstOrNull;
+  }
+
+  /// Create a new group in hierarchy (matches backend POST /hierarchy/groups)
+  Future<Map<String, dynamic>?> createGroup({
+    required String groupName,
+    required String displayName,
+    required int level,
+    required int authorityScore,
+  }) async {
+    final response = await _apiService.post<Map<String, dynamic>>(
+      '${ApiConfig.hierarchyEndpoint}/groups',
+      body: {
+        'group_name': groupName,
+        'display_name': displayName,
+        'level': level,
+        'authority_score': authorityScore,
+      },
       fromJson: (data) => data as Map<String, dynamic>,
     );
-    
+
     if (response.isSuccess && response.data != null) {
-      return UserModel.fromJson(response.data!).toEntity();
+      return response.data;
     }
-    
+
     return null;
   }
-  
-  /// Add new member to hierarchy
+
+  /// Add new member to hierarchy (creates a group or assigns user)
   Future<User?> addMember({
     required String address,
     required String name,
@@ -179,7 +210,6 @@ class HierarchyRepository {
     required String supervisorId,
   }) async {
     if (_useMockData) {
-      // Return a mock added member
       return User(
         id: 'new_${DateTime.now().millisecondsSinceEpoch}',
         address: address,
@@ -191,81 +221,72 @@ class HierarchyRepository {
         createdAt: DateTime.now(),
       );
     }
-    
-    final response = await _apiService.post<Map<String, dynamic>>(
-      '${ApiConfig.hierarchyEndpoint}/members',
-      body: {
-        'address': address,
-        'name': name,
-        'level': level,
-        'supervisor_id': supervisorId,
-      },
-      fromJson: (data) => data as Map<String, dynamic>,
+
+    // Use createGroup as backend organizes by groups
+    final result = await createGroup(
+      groupName: name.toLowerCase().replaceAll(' ', '_'),
+      displayName: name,
+      level: level,
+      authorityScore: _getScoreForLevel(level),
     );
-    
-    if (response.isSuccess && response.data != null) {
-      return UserModel.fromJson(response.data!).toEntity();
+
+    if (result != null) {
+      return User(
+        id: result['id'] as String? ?? '',
+        address: address,
+        name: name,
+        level: level,
+        role: result['display_name'] as String? ?? name,
+        supervisorId: supervisorId,
+        isActive: true,
+        createdAt: DateTime.now(),
+      );
     }
-    
+
     return null;
   }
-  
-  /// Get subordinates of a member
+
+  /// Get subordinates of a member (derived from members list)
   Future<List<User>> getSubordinates(String memberId) async {
     if (_useMockData) {
       final members = _getMockMembers();
       return members.where((m) => m.supervisorId == memberId).toList();
     }
-    
-    final response = await _apiService.get<List<dynamic>>(
-      '${ApiConfig.hierarchyEndpoint}/members/$memberId/subordinates',
-      fromJson: (data) => data as List<dynamic>,
-    );
-    
-    if (response.isSuccess && response.data != null) {
-      return response.data!
-          .map((json) => UserModel.fromJson(json as Map<String, dynamic>).toEntity())
-          .toList();
-    }
-    
-    return [];
+
+    // Backend does not have a dedicated subordinates endpoint
+    // Filter from all members client-side
+    final members = await getAllMembers();
+    return members.where((m) => m.supervisorId == memberId).toList();
   }
-  
+
   /// Get supervisors chain for a member
   Future<List<User>> getSupervisorsChain(String memberId) async {
-    if (_useMockData) {
-      return []; // Simplified for mock
-    }
-    
-    final response = await _apiService.get<List<dynamic>>(
-      '${ApiConfig.hierarchyEndpoint}/members/$memberId/supervisors',
-      fromJson: (data) => data as List<dynamic>,
-    );
-    
-    if (response.isSuccess && response.data != null) {
-      return response.data!
-          .map((json) => UserModel.fromJson(json as Map<String, dynamic>).toEntity())
-          .toList();
-    }
-    
+    // Backend does not have a dedicated supervisors endpoint
     return [];
   }
-  
+
   /// Deactivate a member
   Future<bool> deactivateMember(String memberId) async {
-    if (_useMockData) {
-      return true;
-    }
-    
-    final response = await _apiService.delete(
-      '${ApiConfig.hierarchyEndpoint}/members/$memberId',
-    );
-    
-    return response.isSuccess;
+    // Backend does not have a dedicated deactivate endpoint
+    return false;
   }
-  
-  // ==================== MOCK DATA ====================
-  
+
+  /// Get current user's authority score
+  Future<Map<String, dynamic>?> getMyAuthorityScore() async {
+    final response = await _apiService.get<Map<String, dynamic>>(
+      '${ApiConfig.hierarchyEndpoint}/my-authority-score',
+      fromJson: (data) => data as Map<String, dynamic>,
+    );
+
+    if (response.isSuccess && response.data != null) {
+      return response.data;
+    }
+
+    return null;
+  }
+
+  // ==================== HELPERS ====================
+
   String _getRoleForLevel(int level) {
     switch (level) {
       case 0: return 'CEO';
@@ -275,7 +296,19 @@ class HierarchyRepository {
       default: return 'Employee';
     }
   }
-  
+
+  int _getScoreForLevel(int level) {
+    switch (level) {
+      case 0: return 100;
+      case 1: return 80;
+      case 2: return 50;
+      case 3: return 30;
+      default: return 10;
+    }
+  }
+
+  // ==================== MOCK DATA ====================
+
   HierarchyNodeModel _getMockHierarchyTree() {
     return const HierarchyNodeModel(
       id: 'ceo_001',
@@ -383,12 +416,12 @@ class HierarchyRepository {
           level: 1,
           role: 'Operations Director',
           supervisorId: 'ceo_001',
-          isActive: false, // Inactive example
+          isActive: false,
         ),
       ],
     );
   }
-  
+
   HierarchyStatsModel _getMockHierarchyStats() {
     return const HierarchyStatsModel(
       totalMembers: 11,
@@ -396,14 +429,14 @@ class HierarchyRepository {
       pendingContracts: 5,
       pendingSignatures: 3,
       levelDistribution: {
-        '0': 1,  // CEO
-        '1': 3,  // Directors
-        '2': 3,  // Managers
-        '4': 4,  // Employees
+        '0': 1,
+        '1': 3,
+        '2': 3,
+        '4': 4,
       },
     );
   }
-  
+
   List<User> _getMockMembers() {
     final now = DateTime.now();
     return [

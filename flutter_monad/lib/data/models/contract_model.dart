@@ -54,7 +54,7 @@ class ContractModel {
   /// Convert to domain entity
   Contract toEntity() {
     return Contract(
-      id: id,
+      id: contractId,
       title: title,
       contentHash: content, // Using content as contentHash for now
       creatorId: creatorId,

@@ -195,6 +195,36 @@ async def update_group_score(
     )
 
 
+@router.get("/members")
+async def list_members(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    List all users with their group information
+    """
+    from sqlalchemy.orm import selectinload
+    from sqlalchemy import select as sa_select
+    result = await db.execute(
+        sa_select(User).options(selectinload(User.group))
+    )
+    users = result.scalars().all()
+
+    return [
+        {
+            "id": str(u.id),
+            "username": u.username,
+            "email": u.email,
+            "wallet_address": u.wallet_address,
+            "group_name": u.group.group_name if u.group else None,
+            "created_at": u.created_at.isoformat() if u.created_at else None,
+            "is_active": u.is_active,
+            "supervisor_id": None,
+        }
+        for u in users
+    ]
+
+
 @router.get("/my-authority-score")
 async def get_my_authority_score(
     current_user: User = Depends(get_current_user),

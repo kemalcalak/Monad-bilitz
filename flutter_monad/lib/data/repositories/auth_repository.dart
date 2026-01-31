@@ -114,6 +114,11 @@ class AuthRepository {
     await _clearStoredAuth();
   }
 
+  /// Get stored JWT token (for WebSocket auth)
+  Future<String?> getStoredToken() async {
+    return _getStoredToken();
+  }
+
   /// Check if user is logged in and restore session
   Future<User?> restoreSession() async {
     final token = await _getStoredToken();

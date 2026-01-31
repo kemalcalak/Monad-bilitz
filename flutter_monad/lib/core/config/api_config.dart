@@ -7,7 +7,13 @@ class ApiConfig {
   
   /// WebSocket URL for real-time updates
   static const String wsUrl = 'ws://localhost:8000/ws';
-  
+
+  /// Socket.IO path (matches backend's socketio_path="/socket.io")
+  static const String socketPath = '/socket.io';
+
+  /// Base URL for Socket.IO connection
+  static String get realtimeBaseUrl => baseUrl;
+
   /// API version prefix
   static const String apiVersion = '/api/v1';
   

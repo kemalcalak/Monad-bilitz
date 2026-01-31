@@ -7,6 +7,7 @@ import '../../main.dart';
 import '../blocs/auth_bloc/auth_bloc.dart';
 import '../blocs/contract_bloc/contract_bloc.dart';
 import '../blocs/hierarchy_bloc/hierarchy_bloc.dart';
+import '../../domain/entities/contract.dart';
 import '../widgets/contract_card.dart';
 
 /// Dashboard page - Main entry point after login
@@ -32,7 +33,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   void _loadData() {
-    context.read<ContractBloc>().add(const ContractsLoadRequested(status: 'PENDING_APPROVAL'));
+    context.read<ContractBloc>().add(const ContractsLoadRequested(status: 'pending'));
     context.read<HierarchyBloc>().add(const HierarchyLoadRequested());
   }
 
@@ -161,10 +162,22 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildTimeSavedKPI() {
-    // Mock data - This will come from backend
-    const double timeSavedHours = 127.5;
-    const double targetHours = 200.0;
-    final double percentage = (timeSavedHours / targetHours * 100).clamp(0, 100).toDouble();
+    return BlocBuilder<ContractBloc, ContractState>(
+      builder: (context, state) {
+        // Derive time saved from completed contracts (3 hours per completed contract)
+        int completedCount = 0;
+        if (state is ContractsLoaded) {
+          completedCount = state.contracts.where((c) => c.status == ContractStatusEnum.approved).length;
+        }
+        final double timeSavedHours = completedCount * 3.0;
+        const double targetHours = 200.0;
+        final double percentage = (timeSavedHours / targetHours * 100).clamp(0, 100).toDouble();
+        return _buildTimeSavedGauge(timeSavedHours, targetHours, percentage);
+      },
+    );
+  }
+
+  Widget _buildTimeSavedGauge(double timeSavedHours, double targetHours, double percentage) {
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -255,10 +268,23 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildIssuesResolvedKPI() {
-    // Mock data - This will come from backend
-    const int issuesResolved = 42;
-    const int totalIssues = 50;
-    final double percentage = (issuesResolved / totalIssues * 100).clamp(0, 100).toDouble();
+    return BlocBuilder<ContractBloc, ContractState>(
+      builder: (context, state) {
+        int totalContracts = 0;
+        int completedContracts = 0;
+        if (state is ContractsLoaded) {
+          totalContracts = state.contracts.length;
+          completedContracts = state.contracts.where((c) => c.status == ContractStatusEnum.approved).length;
+        }
+        final int issuesResolved = completedContracts;
+        final int totalIssues = totalContracts > 0 ? totalContracts : 1;
+        final double percentage = (issuesResolved / totalIssues * 100).clamp(0, 100).toDouble();
+        return _buildIssuesResolvedGauge(issuesResolved, totalIssues, percentage);
+      },
+    );
+  }
+
+  Widget _buildIssuesResolvedGauge(int issuesResolved, int totalIssues, double percentage) {
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -500,7 +526,7 @@ class _DashboardPageState extends State<DashboardPage> {
             if (state is ContractsLoaded) {
               // Filter to show only pending contracts/signatures
               final pendingContracts = state.contracts
-                  .where((c) => c.status.name == 'PENDING_APPROVAL' || c.status.name == 'PENDING_SIGNATURE')
+                  .where((c) => c.status == ContractStatusEnum.pendingApproval)
                   .take(5)
                   .toList();
 

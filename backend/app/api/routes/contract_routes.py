@@ -230,6 +230,53 @@ async def list_contracts(
     ]
 
 
+@router.get("/my", response_model=List[ContractResponse])
+async def get_my_contracts(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get contracts created by the current user
+    """
+    result = await db.execute(
+        select(Contract)
+        .where(Contract.creator_id == current_user.id)
+        .options(
+            selectinload(Contract.creator),
+            selectinload(Contract.signatures)
+        )
+        .order_by(Contract.created_at.desc())
+    )
+    contracts = result.scalars().all()
+
+    return [
+        ContractResponse(
+            id=str(c.id),
+            contract_id=c.contract_id,
+            title=c.title,
+            content=c.content,
+            contract_type=c.contract_type,
+            amount=c.amount,
+            required_score=c.required_score,
+            current_score=c.current_score,
+            status=c.status,
+            creator_id=str(c.creator_id),
+            creator_username=c.creator.username,
+            blockchain_tx_hash=c.blockchain_tx_hash,
+            created_at=c.created_at,
+            signatures=[
+                {
+                    'signer_username': sig.signer.username if sig.signer else 'Unknown',
+                    'authority_score': sig.authority_score,
+                    'signed_at': sig.signed_at.isoformat()
+                }
+                for sig in c.signatures
+            ]
+        )
+        for c in contracts
+    ]
+
+
 @router.get("/{contract_id}", response_model=ContractResponse)
 async def get_contract(
     contract_id: str,
@@ -371,3 +418,48 @@ async def sign_contract(
         blockchain_tx_hash=signature.blockchain_tx_hash,
         signed_at=signature.signed_at
     )
+
+
+class ContractReject(BaseModel):
+    reason: str
+
+
+@router.post("/{contract_id}/reject")
+async def reject_contract(
+    contract_id: str,
+    rejection: ContractReject,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Reject a contract
+
+    Sets contract status to rejected with a reason.
+    """
+    result = await db.execute(
+        select(Contract).where(Contract.contract_id == contract_id)
+    )
+    contract = result.scalar_one_or_none()
+
+    if not contract:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Contract not found"
+        )
+
+    if contract.status != "pending":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Contract is {contract.status}, cannot reject"
+        )
+
+    contract.status = "rejected"
+    await db.commit()
+
+    return {
+        "message": "Contract rejected",
+        "contract_id": contract_id,
+        "reason": rejection.reason
+    }
+
+

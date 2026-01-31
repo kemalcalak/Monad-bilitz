@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'dart:convert';
-import 'package:flutter/services.dart';
 import '../../core/theme/app_theme.dart';
 import '../../domain/entities/contract.dart';
 import '../blocs/contract_bloc/contract_bloc.dart';
+import '../blocs/hierarchy_bloc/hierarchy_bloc.dart';
 import '../widgets/contract_card.dart';
 
 /// Task model - JSON'dan yüklenen görev verisi
@@ -175,53 +174,96 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
   void initState() {
     super.initState();
     _loadContracts();
-    _loadUsersFromJson();
-    _loadTasksFromJson();
-    
-    // Parıldayan animasyon için controller
+    _loadUsersFromBackend();
+    _loadTasksFromBackend();
+
+    // Parildayan animasyon icin controller
     _blinkController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     )..repeat(reverse: true);
-    
+
     _blinkAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
       CurvedAnimation(parent: _blinkController, curve: Curves.easeInOut),
     );
   }
 
-  Future<void> _loadUsersFromJson() async {
-    try {
-      final String jsonString = await rootBundle.loadString('assets/sample_hierarchy_data.json');
-      final Map<String, dynamic> jsonData = json.decode(jsonString);
-      final List<dynamic> nodesJson = jsonData['hierarchy_nodes'] as List<dynamic>;
-      
-      setState(() {
-        _users = nodesJson.map((node) => HierarchyUser.fromJson(node as Map<String, dynamic>)).toList();
-        _isLoadingUsers = false;
+  void _loadUsersFromBackend() {
+    context.read<HierarchyBloc>().add(const HierarchyMembersLoadRequested());
+    // Listen for loaded members and convert to HierarchyUser format
+    setState(() => _isLoadingUsers = true);
+    Future.delayed(Duration.zero, () {
+      final state = context.read<HierarchyBloc>().state;
+      if (state is HierarchyMembersLoaded) {
+        _onMembersLoaded(state);
+      }
+      // Also listen to stream
+      context.read<HierarchyBloc>().stream.listen((state) {
+        if (state is HierarchyMembersLoaded && mounted) {
+          _onMembersLoaded(state);
+        }
       });
-    } catch (e) {
-      setState(() {
-        _isLoadingUsers = false;
-      });
-      debugPrint('Error loading users: $e');
-    }
+    });
   }
 
-  Future<void> _loadTasksFromJson() async {
-    try {
-      final String jsonString = await rootBundle.loadString('assets/sample_tasks_data.json');
-      final Map<String, dynamic> jsonData = json.decode(jsonString);
-      final List<dynamic> tasksJson = jsonData['tasks'] as List<dynamic>;
-      
-      setState(() {
-        _tasks = tasksJson.map((task) => Task.fromJson(task as Map<String, dynamic>)).toList();
-        _isLoadingTasks = false;
+  void _onMembersLoaded(HierarchyMembersLoaded state) {
+    setState(() {
+      _users = state.members.map((user) => HierarchyUser(
+        id: user.id,
+        name: user.name,
+        parentId: user.supervisorId,
+        walletAddress: user.address,
+        level: user.level,
+        role: user.role,
+        isActive: user.isActive,
+      )).toList();
+      _isLoadingUsers = false;
+    });
+  }
+
+  void _loadTasksFromBackend() {
+    // Load all contracts and map them to Task format
+    setState(() => _isLoadingTasks = true);
+    Future.delayed(Duration.zero, () {
+      final state = context.read<ContractBloc>().state;
+      if (state is ContractsLoaded) {
+        _onContractsLoadedAsTasks(state);
+      }
+      context.read<ContractBloc>().stream.listen((state) {
+        if (state is ContractsLoaded && mounted) {
+          _onContractsLoadedAsTasks(state);
+        }
       });
-    } catch (e) {
-      setState(() {
-        _isLoadingTasks = false;
-      });
-      debugPrint('Error loading tasks: $e');
+    });
+  }
+
+  void _onContractsLoadedAsTasks(ContractsLoaded state) {
+    setState(() {
+      _tasks = state.contracts.map((contract) => Task(
+        id: contract.id,
+        title: contract.title,
+        shortDescription: contract.description ?? '',
+        longDescription: contract.contentHash,
+        priority: _contractStatusToPriority(contract.status),
+        isError: contract.status == ContractStatusEnum.rejected,
+        createdAt: contract.createdAt.toIso8601String(),
+      )).toList();
+      _isLoadingTasks = false;
+    });
+  }
+
+  String _contractStatusToPriority(ContractStatusEnum status) {
+    switch (status) {
+      case ContractStatusEnum.pendingApproval:
+        return 'high';
+      case ContractStatusEnum.approved:
+        return 'low';
+      case ContractStatusEnum.rejected:
+        return 'critical';
+      case ContractStatusEnum.draft:
+        return 'medium';
+      default:
+        return 'medium';
     }
   }
 
@@ -289,7 +331,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                         ),
                         const SizedBox(width: 12),
                         const Text(
-                          'Tasks',
+                          'Contracts',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -406,7 +448,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                         ),
                         const SizedBox(width: 12),
                         const Text(
-                          'Assigned Tasks',
+                          'Assigned Contracts',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -434,7 +476,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
         onPressed: _showCreateTaskDialog,
         backgroundColor: AppTheme.buttonColor,
         icon: const Icon(Icons.add_task),
-        label: const Text('New Task'),
+        label: const Text('New Contract'),
       ),
     );
   }
@@ -591,7 +633,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                     const SizedBox(width: 16),
                     const Expanded(
                       child: Text(
-                        'Create New Task',
+                        'Create New Contract',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -608,9 +650,9 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
 
                 const SizedBox(height: 24),
 
-                // Task Name
+                // Contract Name
                 const Text(
-                  'Task Name *',
+                  'Contract Name *',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -621,7 +663,7 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                 TextField(
                   controller: titleController,
                   decoration: InputDecoration(
-                    hintText: 'Enter task name',
+                    hintText: 'Enter contract name',
                     filled: true,
                     fillColor: AppTheme.surfaceColor,
                     border: OutlineInputBorder(
@@ -818,25 +860,25 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
                         return;
                       }
 
-                      final newTask = Task(
-                        id: 'task_${DateTime.now().millisecondsSinceEpoch}',
-                        title: titleController.text.trim(),
-                        shortDescription: descriptionController.text.trim(),
-                        longDescription: descriptionController.text.trim(),
-                        priority: selectedPriority,
-                        isError: isError,
-                        createdAt: DateTime.now().toIso8601String(),
+                      // Create contract via backend
+                      final urgency = isError ? 'critical' : selectedPriority;
+                      this.context.read<ContractBloc>().add(
+                        ContractCreateRequested(
+                          title: titleController.text.trim(),
+                          content: descriptionController.text.trim(),
+                          contractType: 'operational',
+                          urgency: urgency,
+                        ),
                       );
-
-                      setState(() {
-                        _tasks.insert(0, newTask);
-                      });
 
                       Navigator.pop(context);
 
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      // Refresh contracts list
+                      _loadContracts();
+
+                      ScaffoldMessenger.of(this.context).showSnackBar(
                         SnackBar(
-                          content: const Text('Task created successfully'),
+                          content: const Text('Contract created successfully'),
                           backgroundColor: AppTheme.successColor,
                           behavior: SnackBarBehavior.floating,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -2288,48 +2330,94 @@ class _ContractsPageState extends State<ContractsPage> with TickerProviderStateM
 
   void _showCreateContractDialog() {
     final titleController = TextEditingController();
-    final descController = TextEditingController();
+    final contentController = TextEditingController();
+    final amountController = TextEditingController();
+    String selectedType = 'financial';
+    String selectedUrgency = 'normal';
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Create Contract'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleController,
-              decoration: const InputDecoration(labelText: 'Title'),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Create Contract'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(labelText: 'Title'),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: contentController,
+                  decoration: const InputDecoration(labelText: 'Content'),
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: selectedType,
+                  decoration: const InputDecoration(labelText: 'Contract Type'),
+                  items: const [
+                    DropdownMenuItem(value: 'financial', child: Text('Financial')),
+                    DropdownMenuItem(value: 'technical', child: Text('Technical')),
+                    DropdownMenuItem(value: 'legal', child: Text('Legal')),
+                    DropdownMenuItem(value: 'hr', child: Text('HR')),
+                    DropdownMenuItem(value: 'operational', child: Text('Operational')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) setDialogState(() => selectedType = value);
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: amountController,
+                  decoration: const InputDecoration(labelText: 'Amount (optional)'),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: selectedUrgency,
+                  decoration: const InputDecoration(labelText: 'Urgency'),
+                  items: const [
+                    DropdownMenuItem(value: 'low', child: Text('Low')),
+                    DropdownMenuItem(value: 'normal', child: Text('Normal')),
+                    DropdownMenuItem(value: 'high', child: Text('High')),
+                    DropdownMenuItem(value: 'critical', child: Text('Critical')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) setDialogState(() => selectedUrgency = value);
+                  },
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: descController,
-              decoration: const InputDecoration(labelText: 'Description'),
-              maxLines: 3,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (titleController.text.trim().isEmpty || contentController.text.trim().isEmpty) {
+                  return;
+                }
+                final amount = double.tryParse(amountController.text);
+                context.read<ContractBloc>().add(
+                  ContractCreateRequested(
+                    title: titleController.text.trim(),
+                    content: contentController.text.trim(),
+                    contractType: selectedType,
+                    amount: amount,
+                    urgency: selectedUrgency,
+                  ),
+                );
+                Navigator.pop(context);
+              },
+              child: const Text('Create'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              context.read<ContractBloc>().add(
-                ContractCreateRequested(
-                  title: titleController.text,
-                  contentHash: 'hash_${DateTime.now().millisecondsSinceEpoch}',
-                  requiredApproverIds: [],
-                  minApprovalLevel: 2,
-                  description: descController.text.isNotEmpty ? descController.text : null,
-                ),
-              );
-              Navigator.pop(context);
-            },
-            child: const Text('Create'),
-          ),
-        ],
       ),
     );
   }
