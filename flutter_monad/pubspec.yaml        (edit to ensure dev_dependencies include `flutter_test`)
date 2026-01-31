@@ -1,0 +1,19 @@
+name: flutter_monad
+description: A Flutter project with testing setup
+dependencies:
+  flutter:
+    sdk: flutter
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+---
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
+
+void main() {
+  testWidgets('hello world test', (WidgetTester tester) async {
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: Text('Hello, World!'))));
+    expect(find.text('Hello, World!'), findsOneWidget);
+  });

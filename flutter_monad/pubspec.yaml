@@ -1,5 +1,5 @@
 name: flutter_monad
-description: "A new Flutter project."
+description: "Signature - Hierarchical Contract & Decision Management System"
 publish_to: 'none'
 version: 0.1.0
 
@@ -9,11 +9,43 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  
+  # State Management
+  flutter_bloc: ^8.1.6
+  equatable: ^2.0.5
+  
+  # Networking
+  http: ^1.2.2
+  web_socket_channel: ^3.0.1
+  
+  # Crypto & Security
+  crypto: ^3.0.5
+  pointycastle: ^3.9.1
+  convert: ^3.1.1
+  
+  # Storage
+  shared_preferences: ^2.3.3
+  
+  # UI Components
+  google_fonts: ^6.2.1
+  flutter_svg: ^2.0.10+1
+  cached_network_image: ^3.4.1
+  
+  # Utils
+  intl: ^0.19.0
+  uuid: ^4.5.1
+  json_annotation: ^4.10.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  build_runner: ^2.4.13
+  json_serializable: ^6.8.0
 
 flutter:
   uses-material-design: true
+  
+  assets:
+    - assets/images/
+    - assets/icons/
