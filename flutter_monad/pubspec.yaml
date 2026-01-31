@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  syncfusion_flutter_treemap: ^28.1.33
 
 dev_dependencies:
   flutter_test:
