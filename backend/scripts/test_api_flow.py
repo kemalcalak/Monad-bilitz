@@ -29,7 +29,7 @@ async def test_auth_flow():
     print_step("Testing Authentication Flow")
     
     # 1. Register CEO
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=60.0) as client:
         # Register CEO
         ceo_data = {
             "username": "api_test_ceo",
@@ -57,7 +57,7 @@ async def test_contract_flow(token):
     print_step("Testing Contract Flow")
     headers = {"Authorization": f"Bearer {token}"}
     
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=60.0) as client:
         # 1. Create Contract
         contract_data = {
             "title": "API Test Contract",
@@ -110,7 +110,7 @@ async def test_hierarchy(token):
     print_step("Testing Hierarchy Flow")
     headers = {"Authorization": f"Bearer {token}"}
     
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=60.0) as client:
         resp = await client.get(f"{BASE_URL}/hierarchy/graph", headers=headers)
         if resp.status_code == 200:
             data = resp.json()
