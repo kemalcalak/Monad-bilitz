@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  
+  "teammateMode": "in-process",
+  
+  "respectGitignore": true,
+  "terminalProgressBarEnabled": true,
+  "autoUpdatesChannel": "stable",
+  
+  "permissions": {
+    "allow": [
+      "Bash(npm run lint)",
+      "Bash(npm run test *)",
+      "Read(~/.zshrc)"
+    ],
+    "deny": [
+      "Bash(curl *)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)"
+    ]
+  },
+
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CI": "true",
+    "NO_COLOR": "1",
+    "CLAUDE_MODEL": "claude-3-5-sonnet-latest",
+    "CLAUDE_DISABLE_TELEMETRY": "1",
+    "OTEL_METRICS_EXPORTER": "otlp",
+    "CLAUDE_LOG_LEVEL": "info"
+  }
+}

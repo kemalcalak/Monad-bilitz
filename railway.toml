@@ -1,0 +1,8 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "./server"
+healthcheckPath = "/health"
+healthcheckTimeout = 60

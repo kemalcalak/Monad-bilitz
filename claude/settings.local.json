@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go mod tidy:*)",
+      "Bash(cmd.exe /c \"where go\")",
+      "Bash(cmd.exe /c \"where go 2>&1\")",
+      "Bash(powershell.exe -Command \"Get-Command go -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source\")",
+      "Bash(docker:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(MSYS_NO_PATHCONV=1 docker run:*)",
+      "Bash(/c/flutter_projeler/Agent_Store_Full/.env.example:*)",
+      "Bash(MSYS_NO_PATHCONV=1 docker build:*)",
+      "Bash(/c/flutter_projeler/Agent_Store_Full/.env:*)",
+      "Bash(flutter build:*)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(echo:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ3YWxsZXQiOiIweHRlc3RfZTJlX3dhbGxldCIsImV4cCI6MTc3MTc1NDEwNiwiaWF0IjoxNzcxNjY3NzA2fQ.c9RhktDhdrM7H5gA-edbDsUsVUPNS_6I-iw5WL6J6xc\")",
+      "Bash(__NEW_LINE_0de16fefab1d24a1__ echo \"=== GET /user/credits \\(bug fix test\\) ===\")",
+      "Bash(node --version:*)",
+      "Bash(npx:*)",
+      "Bash(vercel:*)",
+      "Bash(RAILWAY_TOKEN=e657b760-0dc1-4ca3-bef0-39f4d9a8260e npx @railway/cli:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(node:*)",
+      "WebFetch(domain:agentstore.up.railway.app)",
+      "Bash(cd:)",
+      "Bash(true:*)",
+      "Bash(tasklist /FI \"PID eq 22412\" 2>&1 && tasklist /FI \"PID eq 8780\" 2>&1)",
+      "Bash(powershell:*)",
+      "Bash(git:*)"
+    ]
+  }
+}
